@@ -68,6 +68,7 @@ final class Installer
                     'name'     => 'dbname',
                     'user'     => 'dbuser',
                     'password' => 'dbpassword',
+                    'port'     => '3306',
                 ]
             ];
             // Попытка создать settings.yaml с дефолтными настройками

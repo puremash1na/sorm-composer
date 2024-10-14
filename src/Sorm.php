@@ -40,8 +40,9 @@ final class Sorm
     private function initDatabase(): void
     {
         $dsn = sprintf(
-            'mysql:host=%s;dbname=%s;charset=utf8',
+            'mysql:host=%s;port=%d;dbname=%s;charset=utf8',
             $this->settings['database']['host'],
+            $this->settings['database']['port'],
             $this->settings['database']['name']
         );
 
