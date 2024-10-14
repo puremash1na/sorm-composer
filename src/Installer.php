@@ -8,12 +8,10 @@ class Installer
 {
     public static function install()
     {
-        // Определите абсолютный путь к корневой папке проекта
-        $rootDir = dirname(__DIR__); // Указание на родительскую директорию текущего файла
-        $logDir = $rootDir . '/logs'; // Папка для логов
-        $settingsPath = $rootDir . '/settings.yaml'; // Путь к файлу настроек
+        $rootDir = realpath(__DIR__ . '/../../');
+        $logDir = $rootDir . '/logs';
+        $settingsPath = $rootDir . '/settings.yaml';
 
-        // Создаем папку для логов, если она не существует
         if (!is_dir($logDir)) {
             if (mkdir($logDir, 0777, true)) {
                 echo "Лог директория создана\n";
@@ -24,7 +22,6 @@ class Installer
             echo "Лог директория уже существует\n";
         }
 
-        // Создаем settings.yaml, если он не существует
         if (!file_exists($settingsPath)) {
             $defaultSettings = [
                 'appName' => 'SORM Module',
