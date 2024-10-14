@@ -1,6 +1,6 @@
 <?php
 
-namespace SormModule; // Убедитесь, что это ваше пространство имен
+namespace SormModule;
 
 use Symfony\Component\Yaml\Yaml;
 
@@ -8,8 +8,10 @@ class Installer
 {
     public static function install()
     {
-        $logDir = __DIR__ . '/../logs'; // Папка для логов
-        $settingsPath = __DIR__ . '/../settings.yaml'; // Путь к файлу настроек
+        // Определите абсолютный путь к корневой папке проекта
+        $rootDir = dirname(__DIR__); // Указание на родительскую директорию текущего файла
+        $logDir = $rootDir . '/logs'; // Папка для логов
+        $settingsPath = $rootDir . '/settings.yaml'; // Путь к файлу настроек
 
         // Создаем папку для логов, если она не существует
         if (!is_dir($logDir)) {
