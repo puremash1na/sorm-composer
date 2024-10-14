@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, Webhost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Sorm.php
- * Updated At: 14.10.2024, 20:36
+ * Updated At: 14.10.2024, 21:10
  */
 
 namespace SormModule;
@@ -32,9 +32,11 @@ final class Sorm
      * Поиск и загрузка файла настроек settings.yaml
      *
      * @return mixed
+     * @throws Exception
      */
     public static function loadSettings(): mixed
     {
+        self::$settings = Sorm::loadSettings();
         $settingsFilePath = self::$path . '/sorm/settings.yaml'; // Используем путь до корня проекта
         self::$settings = Yaml::parseFile($settingsFilePath);
         return self::$settings;
