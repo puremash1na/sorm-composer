@@ -9,8 +9,8 @@ class Installer
     public static function install()
     {
         $rootDir = realpath(__DIR__ . '/../../../');
-        $logDir = $rootDir . '../logs';
-        $settingsPath = $rootDir . '../settings.yaml';
+        $logDir = $rootDir . '/logs';
+        $settingsPath = $rootDir . '/settings.yaml';
 
         if (!is_dir($logDir)) {
             if (mkdir($logDir, 0777, true)) {
