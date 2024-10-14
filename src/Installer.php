@@ -44,7 +44,7 @@ final class Installer
         $now  = date('H:i:s');
 
         // Initialize error message variable
-        $error = error_get_last()['message'];
+        $error = empty(error_get_last()) ? '' : error_get_last()['message'];
 
         // Check if the logs directory exists; if not, attempt to create it
         if (!is_dir($logDir)) {
