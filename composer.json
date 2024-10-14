@@ -21,8 +21,7 @@
         }
     ],
     "require": {
-        "ext-pdo": "*",
-        "monolog/monolog": "^3.0"
+        "ext-pdo": "*"
     },
     "scripts": {
         "post-install-cmd": [
