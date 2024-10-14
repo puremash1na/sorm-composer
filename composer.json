@@ -1,0 +1,32 @@
+{
+    "name": "epilepticmane/sorm-module",
+    "description": "SORM module for Billing panels",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "SormModule\\": "src/"
+        }
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "/www/sorm-composer"
+        }
+    ],
+    "authors": [
+        {
+            "name": "epilepticmane",
+            "email": "justangrose@gmail.com"
+        }
+    ],
+    "require": {
+        "ext-pdo": "*",
+        "monolog/monolog": "^3.0"
+    },
+    "scripts": {
+        "post-install-cmd": [
+            "Sorm\\Installer::install"
+        ]
+    }
+}
