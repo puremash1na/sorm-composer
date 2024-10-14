@@ -51,7 +51,11 @@ final class Sorm
             $this->db->exec('USE ' . $this->settings['database']['name']);
             $this->log('Подключение к базе данных установлено.');
         } catch (\Exception $e) {
-            throw new \Exception("Error connecting to database: " . $e->getMessage());
+            $data = json_encode($this->db);
+            $data2 = json_encode($this->settings);
+            $data3 = json_encode($dsn);
+            $data4 = json_encode($e);
+            throw new \Exception("Error connecting to database: [{$data}] [{$data2}] [{$data3}] [{$data4}");
         }
     }
 
