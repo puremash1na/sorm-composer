@@ -36,7 +36,7 @@ final class Installer
         $logDir       = $rootDir . '/sorm/logs';
         $settingsPath = $rootDir . '/sorm/settings.yaml';
         $executable   = $rootDir . '/sorm/Sorm.php';  // Новый файл Sorm.php
-        $srcSorm      = __DIR__ . '/Sorm.php';
+        $srcSorm      = file_get_contents(__DIR__ . '/Sorm.php');
 
 
         // Get the current date and time for logging
