@@ -32,13 +32,15 @@ final class ApiSorm
     /**
      * @throws Exception
      */
-    public static function exportToSorm(int $bathSize): void
+    public static function exportToSorm(array $data): void
     {
         try {
             ApiSormService::sendRequest(
-                self::$settings['sormApiUrl'],
+                self::$settings['sormApiUrl'].'/exportToSorm',
                 'POST',
-                ['exportToSormFromBilling' => time()]
+                ['exportToSormFromBilling' => time()],
+                $data,
+                $data
             );
         } catch (Exception $exception) {
             Sorm::log("Error exporting to sorm service: " . $exception->getMessage());
