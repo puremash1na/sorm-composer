@@ -14,8 +14,8 @@ class Installer
         // Удаляем 'public' из текущего пути, чтобы получить корневую директорию проекта
         $rootDir = rtrim(dirname($currentDir), '/public'); // Удаляем /public, если он существует
 
-        $logDir = $rootDir . '/logs'; // Папка для логов
-        $settingsPath = $rootDir . '/settings.yaml'; // Путь к файлу настроек
+        $logDir = $rootDir . '/sorm/logs'; // Папка для логов
+        $settingsPath = $rootDir . '/sorm/settings.yaml'; // Путь к файлу настроек
 
         // Создаем папку для логов, если она не существует
         if (!is_dir($logDir)) {
