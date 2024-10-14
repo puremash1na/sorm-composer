@@ -3,11 +3,12 @@
  * Copyright (c) 2024 - 2024, Webhost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ExportData.php
- * Updated At: 14.10.2024, 20:44
+ * Updated At: 14.10.2024, 21:04
  */
 
 namespace SormModule\Service;
 
+use PDO;
 use SormModule\Sorm;
 
 final class ExportData
@@ -52,7 +53,7 @@ final class ExportData
                 }
 
                 // Отправляем данные в SORM API
-                ApiSorm::exportToSorm($batchSize, $data);
+                ApiSorm::exportToSorm($data);
 
                 // Делаем паузу в 5–6 секунд
                 sleep(rand(5, 6));
