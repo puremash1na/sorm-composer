@@ -39,15 +39,20 @@ final class Sorm
      */
     private function initDatabase(): void
     {
-        $dsn = sprintf(
-            'mysql:host=%s;port=%d;dbname=%s;charset=utf8',
-            $this->settings['database']['host'],
-            $this->settings['database']['port'],
-            $this->settings['database']['name']
-        );
-
-        $this->db = new PDO($dsn, $this->settings['database']['user'], $this->settings['database']['password']);
-        $this->log('Подключение к базе данных установлено.');
+        try {
+            $dsn = sprintf(
+                'mysql:host=%s;port=%d;charset=utf8',
+                $this->settings['database']['host'],
+                $this->settings['database']['port']
+            );
+            $this->db = new PDO($dsn, $this->settings['database']['user'], $this->settings['database']['password'], [
+                PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+            ]);
+            $this->db->exec('USE ' . $this->settings['database']['name']);
+            $this->log('Подключение к базе данных установлено.');
+        } catch (\Exception $e) {
+            throw new \Exception("Error connecting to database: " . $e->getMessage());
+        }
     }
 
     /**
