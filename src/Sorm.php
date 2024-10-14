@@ -3,20 +3,16 @@
 namespace Sorm;
 
 use PDO;
-use Monolog\Logger;
-use Monolog\Handler\StreamHandler;
 use Symfony\Component\Yaml\Yaml;
 
 final class Sorm
 {
     private $db;
-    private $logger;
     private $settings;
 
     public function __construct()
     {
         $this->loadSettings();
-        $this->initLogger();
         $this->initDatabase();
     }
 
@@ -25,12 +21,7 @@ final class Sorm
         $this->settings = Yaml::parseFile(__DIR__ . '/../settings.yaml');
     }
 
-    // Инициализация логгера
-    private function initLogger()
-    {
-        $this->logger = new Logger('sorm');
-        $this->logger->pushHandler(new StreamHandler(__DIR__ . '/../logs/sorm.log', Logger::DEBUG));
-    }
+    // Инициализация подключения к базе данных
     private function initDatabase()
     {
         $dsn = sprintf(
@@ -40,7 +31,7 @@ final class Sorm
         );
 
         $this->db = new PDO($dsn, $this->settings['database']['user'], $this->settings['database']['password']);
-        $this->logger->info('Подключение к базе данных установлено.');
+        $this->log('Подключение к базе данных установлено.');
     }
 
     public function exportToSorm()
@@ -49,7 +40,6 @@ final class Sorm
         $query = $this->db->query('SELECT * FROM some_table'); // Пример запроса
 
         $data = $query->fetchAll(PDO::FETCH_ASSOC);
-
         $this->sendDataToSorm($sormApiUrl, $data);
     }
 
@@ -64,6 +54,17 @@ final class Sorm
         $response = curl_exec($ch);
         curl_close($ch);
 
-        $this->logger->info('Данные отправлены в SORM API.', ['response' => $response]);
+        $this->log('Данные отправлены в SORM API.', ['response' => $response]);
+    }
+
+    // Запись логов в файл
+    private function log($message, $context = [])
+    {
+        $logFile = __DIR__ . '/../logs/sorm.log';
+        $timestamp = date('Y-m-d H:i:s');
+        $contextString = !empty($context) ? json_encode($context) : '';
+
+        $logMessage = sprintf("[%s] %s %s\n", $timestamp, $message, $contextString);
+        file_put_contents($logFile, $logMessage, FILE_APPEND);
     }
 }

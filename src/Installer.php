@@ -2,16 +2,21 @@
 
 namespace Sorm;
 
+use Symfony\Component\Yaml\Yaml;
+
 class Installer
 {
     public static function install()
     {
-        if (!is_dir(__DIR__ . '/../logs')) {
-            mkdir(__DIR__ . '/../logs', 0777, true);
+        $logDir = __DIR__ . '/../logs';
+        $settingsPath = __DIR__ . '/../settings.yaml';
+
+        // Создаем папку для логов, если она не существует
+        if (!is_dir($logDir)) {
+            mkdir($logDir, 0777, true);
         }
 
-        // Создаем settings.yaml, если не существует
-        $settingsPath = __DIR__ . '/../settings.yaml';
+        // Создаем settings.yaml, если он не существует
         if (!file_exists($settingsPath)) {
             $defaultSettings = [
                 'appName' => 'SORM Module',
@@ -20,10 +25,10 @@ class Installer
                     'host' => 'localhost',
                     'name' => 'dbname',
                     'user' => 'dbuser',
-                    'password' => 'dbpassword'
-                ]
+                    'password' => 'dbpassword',
+                ],
             ];
-            file_put_contents($settingsPath, yaml_emit($defaultSettings));
+            file_put_contents($settingsPath, Yaml::dump($defaultSettings));
         }
     }
 }
