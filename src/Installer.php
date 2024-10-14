@@ -1,52 +1,79 @@
 <?php
+/*
+ * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
+ * Author: epilepticmane
+ * File: Installer.php
+ * Updated At: 14.10.2024, 13:43
+ *
+ */
 
 namespace SormModule;
 
 use Symfony\Component\Yaml\Yaml;
 
-class Installer
+final class Installer
 {
+    /**
+     * Installs the SORM module by creating necessary directories and configuration files.
+     *
+     * This method performs the following actions:
+     * - Determines the current working directory and derives the root directory.
+     * - Creates a logs directory for the SORM module if it doesn't already exist.
+     * - Generates a settings.yaml file with default configuration if it does not exist.
+     * - Logs success or failure messages to a log file within the logs directory.
+     *
+     * @return void
+     */
     public static function install()
     {
-        // Получаем текущую рабочую директорию
+        // Get the current working directory
         $currentDir = getcwd();
 
-        // Удаляем 'public' из текущего пути, чтобы получить корневую директорию проекта
-        $rootDir = rtrim(dirname($currentDir), '/public'); // Удаляем /public, если он существует
+        // Derive the root directory by removing the '/public' suffix
+        $rootDir = rtrim(dirname($currentDir), '/public');
 
-        $logDir = $rootDir . '/sorm/logs'; // Папка для логов
-        $settingsPath = $rootDir . '/sorm/settings.yaml'; // Путь к файлу настроек
+        // Define the paths for the logs directory and the settings.yaml file
+        $logDir       = $rootDir . '/sorm/logs';
+        $settingsPath = $rootDir . '/sorm/settings.yaml';
 
-        // Создаем папку для логов, если она не существует
+        // Get the current date and time for logging
+        $date = date('d-m-Y');
+        $now  = date('H:i:s');
+
+        // Initialize error message variable
+        $error = error_get_last()['message'];
+
+        // Check if the logs directory exists; if not, attempt to create it
         if (!is_dir($logDir)) {
             if (mkdir($logDir, 0777, true)) {
-                echo "Лог директория создана\n";
+                // Log success message if the directory was created
+                file_put_contents($logDir . "/install-{$date}.log", "[$now] Log directory created.\n", FILE_APPEND);
             } else {
-                echo "Не удалось создать директорию: " . error_get_last()['message'] . "\n";
+                // Log error message if the directory creation failed
+                file_put_contents($logDir . "/install-{$date}.log", "[$now] Failed to create directory: {$error}\n", FILE_APPEND);
             }
-        } else {
-            echo "Лог директория уже существует\n";
         }
 
-        // Создаем settings.yaml, если он не существует
+        // Check if the settings.yaml file exists; if not, create it with default settings
         if (!file_exists($settingsPath)) {
             $defaultSettings = [
-                'appName' => 'SORM Module',
+                'appName'    => 'SORM Module',
                 'sormApiUrl' => 'http://example.com/api',
-                'database' => [
-                    'host' => 'localhost',
-                    'name' => 'dbname',
-                    'user' => 'dbuser',
+                'database'   => [
+                    'host'     => 'localhost',
+                    'name'     => 'dbname',
+                    'user'     => 'dbuser',
                     'password' => 'dbpassword',
-                ],
+                ]
             ];
+            // Attempt to write default settings to settings.yaml
             if (file_put_contents($settingsPath, Yaml::dump($defaultSettings))) {
-                echo "Файл settings.yaml создан\n";
+                // Log success message if the file was created
+                file_put_contents($logDir . "/install-{$date}.log", "[$now] settings.yaml file created.\n", FILE_APPEND);
             } else {
-                echo "Не удалось создать файл settings.yaml: " . error_get_last()['message'] . "\n";
+                // Log error message if the file creation failed
+                file_put_contents($logDir . "/install-{$date}.log", "[$now] Failed to create settings.yaml file: $error\n", FILE_APPEND);
             }
-        } else {
-            echo "Файл settings.yaml уже существует\n";
         }
     }
 }
