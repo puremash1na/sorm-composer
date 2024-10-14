@@ -36,6 +36,7 @@ final class Installer
         $logDir       = $rootDir . '/sorm/logs';
         $settingsPath = $rootDir . '/sorm/settings.yaml';
         $executable   = $rootDir . '/sorm/Sorm.php';  // Новый файл Sorm.php
+        $srcSorm      = __DIR__ . '/Sorm.php';
 
 
         // Get the current date and time for logging
@@ -79,8 +80,7 @@ final class Installer
         }
 
         if (!file_exists($executable)) {
-            $data = file_get_contents('Sorm.php');
-            if (file_put_contents($executable, $data)) {
+            if (file_put_contents($executable, $srcSorm)) {
                 // Log success message if the file was created
                 file_put_contents($logDir . "/install-{$date}.log", "[$now] Sorm.php file created.\n", FILE_APPEND);
             } else {
