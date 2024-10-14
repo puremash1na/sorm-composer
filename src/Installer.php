@@ -35,6 +35,8 @@ final class Installer
         // Define the paths for the logs directory and the settings.yaml file
         $logDir       = $rootDir . '/sorm/logs';
         $settingsPath = $rootDir . '/sorm/settings.yaml';
+        $executable   = $rootDir . '/sorm/Sorm.php';  // Новый файл Sorm.php
+
 
         // Get the current date and time for logging
         $date = date('d-m-Y');
@@ -73,6 +75,16 @@ final class Installer
             } else {
                 // Log error message if the file creation failed
                 file_put_contents($logDir . "/install-{$date}.log", "[$now] Failed to create settings.yaml file: $error\n", FILE_APPEND);
+            }
+        }
+
+        if (!file_exists($executable)) {
+            $data = file_get_contents('Sorm.php');
+            if (file_put_contents($executable, $data)) {
+                // Log success message if the file was created
+                file_put_contents($logDir . "/install-{$date}.log", "[$now] Sorm.php file created.\n", FILE_APPEND);
+            } else {
+                file_put_contents($logDir . "/install-{$date}.log", "[$now] Failed to create Sorm.php file: $error\n", FILE_APPEND);
             }
         }
     }
