@@ -18,7 +18,7 @@ final class Sorm
 
     private function loadSettings()
     {
-        $this->settings = Yaml::parseFile(__DIR__ . '/../settings.yaml');
+        $this->settings = Yaml::parseFile('settings.yaml');
     }
 
     // Инициализация подключения к базе данных
@@ -60,7 +60,8 @@ final class Sorm
     // Запись логов в файл
     private function log($message, $context = [])
     {
-        $logFile = __DIR__ . '/../logs/sorm.log';
+        $date = date('d-m-Y');
+        $logFile = "logs/{$this->settings['env']}-{$date}.log";
         $timestamp = date('Y-m-d H:i:s');
         $contextString = !empty($context) ? json_encode($context) : '';
 

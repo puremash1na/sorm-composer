@@ -62,6 +62,7 @@ final class Installer
             $defaultSettings = [
                 'appName'    => 'SORM Module',
                 'sormApiUrl' => 'http://example.com/api',
+                'env'        => 'dev',
                 'database'   => [
                     'host'     => 'localhost',
                     'name'     => 'dbname',
