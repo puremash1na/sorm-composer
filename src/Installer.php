@@ -26,13 +26,7 @@ final class Installer
      */
     public static function install()
     {
-        // Get the current working directory
-        $currentDir = getcwd();
-
-        // Derive the root directory by removing the '/public' suffix
-        $rootDir = rtrim(dirname($currentDir), '/public');
-
-        // Define the paths for the logs directory and the settings.yaml file
+        $rootDir      = "../../../../";
         $logDir       = $rootDir . '/sorm/logs';
         $settingsPath = $rootDir . '/sorm/settings.yaml';
         $executable   = $rootDir . '/sorm/Sorm.php';  // Новый файл Sorm.php
