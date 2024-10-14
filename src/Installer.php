@@ -1,10 +1,9 @@
 <?php
 /*
- * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
+ * Copyright (c) 2024 - 2024, Webhost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 14.10.2024, 14:16
- *
+ * Updated At: 14.10.2024, 20:22
  */
 
 namespace SormModule;

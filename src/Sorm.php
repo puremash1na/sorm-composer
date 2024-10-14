@@ -1,4 +1,10 @@
 <?php
+/*
+ * Copyright (c) 2024 - 2024, Webhost1, LLC. All rights reserved.
+ * Author: epilepticmane
+ * File: Sorm.php
+ * Updated At: 14.10.2024, 20:22
+ */
 
 namespace SormModule;
 
@@ -36,6 +42,7 @@ final class Sorm
      * Инициализация подключения к базе данных
      *
      * @return void
+     * @throws \Exception
      */
     private function initDatabase(): void
     {
