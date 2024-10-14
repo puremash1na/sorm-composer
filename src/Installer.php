@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, Webhost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 14.10.2024, 20:22
+ * Updated At: 14.10.2024, 21:01
  */
 
 namespace SormModule;
@@ -35,8 +35,10 @@ final class Installer
 
         $logDir = $rootDir . '/sorm/logs';
         $settingsPath = $rootDir . '/sorm/settings.yaml';
-        $executable = $rootDir . '/sorm/Sorm.php'; // Новый файл Sorm.php
+        $executable = $rootDir . '/sorm/Sorm.php';
         $srcSorm = file_get_contents(__DIR__ . '/Sorm.php');
+        $executableExport = $rootDir . '/sorm/ExportSorm.php';
+        $srcSormExport = file_get_contents(__DIR__ . '/Service/ExportData.php');
 
         // Текущая дата и время для логов
         $date = date('d-m-Y');
@@ -85,6 +87,15 @@ final class Installer
                 file_put_contents($logDir . "/install-{$date}.log", "[$now] Sorm.php file created.\n", FILE_APPEND);
             } else {
                 file_put_contents($logDir . "/install-{$date}.log", "[$now] Failed to create Sorm.php file: $error\n", FILE_APPEND);
+            }
+        }
+        // Копируем ExportData.php, если его нет
+        if (!file_exists($executableExport)) {
+            if (file_put_contents($executableExport, $srcSormExport)) {
+                // Логируем успешное создание файла
+                file_put_contents($logDir . "/install-{$date}.log", "[$now] ExportData.php file created.\n", FILE_APPEND);
+            } else {
+                file_put_contents($logDir . "/install-{$date}.log", "[$now] Failed to create ExportData.php file: $error\n", FILE_APPEND);
             }
         }
     }
