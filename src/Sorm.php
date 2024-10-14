@@ -1,6 +1,6 @@
 <?php
 
-namespace Sorm;
+namespace SormModule;
 
 use PDO;
 use Symfony\Component\Yaml\Yaml;
