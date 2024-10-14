@@ -14,7 +14,7 @@ class Installer
         // Создаем папку для логов, если она не существует
         if (!is_dir($logDir)) {
             mkdir($logDir, 0777, true);
-            file_put_contents($logDir . '/install.log', "Лог директория создана.\n", FILE_APPEND);
+            echo "Лог директория создана";
         }
 
         // Создаем settings.yaml, если он не существует
@@ -30,7 +30,7 @@ class Installer
                 ],
             ];
             file_put_contents($settingsPath, Yaml::dump($defaultSettings));
-            file_put_contents($logDir . '/install.log', "Файл settings.yaml создан.\n", FILE_APPEND);
+            echo "Файл settings.yaml создан";
         }
     }
 }
