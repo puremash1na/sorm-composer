@@ -10,8 +10,8 @@ class Installer
     {
         // Определяем корневую директорию проекта
         $rootDir = getcwd(); // Получаем текущую рабочую директорию
-        $logDir = $rootDir . '/logs'; // Папка для логов
-        $settingsPath = $rootDir . '/settings.yaml'; // Путь к файлу настроек
+        $logDir = $rootDir . '../logs'; // Папка для логов
+        $settingsPath = $rootDir . '../settings.yaml'; // Путь к файлу настроек
 
         // Создаем папку для логов, если она не существует
         if (!is_dir($logDir)) {
