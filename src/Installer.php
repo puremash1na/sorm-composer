@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 14.10.2024, 13:43
+ * Updated At: 14.10.2024, 14:16
  *
  */
 
@@ -14,44 +14,50 @@ use Symfony\Component\Yaml\Yaml;
 final class Installer
 {
     /**
-     * Installs the SORM module by creating necessary directories and configuration files.
+     * Installs the SORM module by creating necessary directories and configuration files in the project root.
      *
-     * This method performs the following actions:
-     * - Determines the current working directory and derives the root directory.
+     * This method:
+     * - Searches for the .env file to determine the project root directory.
      * - Creates a logs directory for the SORM module if it doesn't already exist.
      * - Generates a settings.yaml file with default configuration if it does not exist.
+     * - Copies the Sorm.php file to the project root.
      * - Logs success or failure messages to a log file within the logs directory.
      *
      * @return void
      */
     public static function install()
     {
-        $rootDir      = "../../../../";
-        $logDir       = $rootDir . '/sorm/logs';
+        // Определяем корневую папку проекта по наличию файла .env
+        $rootDir = self::findProjectRoot();
+        if (!$rootDir) {
+            echo "Project root (.env) not found.";
+            return;
+        }
+
+        $logDir = $rootDir . '/sorm/logs';
         $settingsPath = $rootDir . '/sorm/settings.yaml';
-        $executable   = $rootDir . '/sorm/Sorm.php';  // Новый файл Sorm.php
-        $srcSorm      = file_get_contents(__DIR__ . '/Sorm.php');
+        $executable = $rootDir . '/sorm/Sorm.php'; // Новый файл Sorm.php
+        $srcSorm = file_get_contents(__DIR__ . '/Sorm.php');
 
-
-        // Get the current date and time for logging
+        // Текущая дата и время для логов
         $date = date('d-m-Y');
-        $now  = date('H:i:s');
+        $now = date('H:i:s');
 
-        // Initialize error message variable
+        // Инициализация сообщения об ошибке
         $error = empty(error_get_last()) ? '' : error_get_last()['message'];
 
-        // Check if the logs directory exists; if not, attempt to create it
+        // Создание папки для логов, если её не существует
         if (!is_dir($logDir)) {
             if (mkdir($logDir, 0777, true)) {
-                // Log success message if the directory was created
+                // Логируем успешное создание директории
                 file_put_contents($logDir . "/install-{$date}.log", "[$now] Log directory created.\n", FILE_APPEND);
             } else {
-                // Log error message if the directory creation failed
+                // Логируем ошибку, если директорию не удалось создать
                 file_put_contents($logDir . "/install-{$date}.log", "[$now] Failed to create directory: {$error}\n", FILE_APPEND);
             }
         }
 
-        // Check if the settings.yaml file exists; if not, create it with default settings
+        // Создание settings.yaml, если его не существует
         if (!file_exists($settingsPath)) {
             $defaultSettings = [
                 'appName'    => 'SORM Module',
@@ -64,23 +70,39 @@ final class Installer
                     'password' => 'dbpassword',
                 ]
             ];
-            // Attempt to write default settings to settings.yaml
+            // Попытка создать settings.yaml с дефолтными настройками
             if (file_put_contents($settingsPath, Yaml::dump($defaultSettings))) {
-                // Log success message if the file was created
                 file_put_contents($logDir . "/install-{$date}.log", "[$now] settings.yaml file created.\n", FILE_APPEND);
             } else {
-                // Log error message if the file creation failed
                 file_put_contents($logDir . "/install-{$date}.log", "[$now] Failed to create settings.yaml file: $error\n", FILE_APPEND);
             }
         }
 
+        // Копируем Sorm.php, если его нет
         if (!file_exists($executable)) {
             if (file_put_contents($executable, $srcSorm)) {
-                // Log success message if the file was created
+                // Логируем успешное создание файла
                 file_put_contents($logDir . "/install-{$date}.log", "[$now] Sorm.php file created.\n", FILE_APPEND);
             } else {
                 file_put_contents($logDir . "/install-{$date}.log", "[$now] Failed to create Sorm.php file: $error\n", FILE_APPEND);
             }
         }
+    }
+
+    /**
+     * Находит корневую директорию проекта по наличию файла .env.
+     * Рекурсивно поднимается по дереву директорий, начиная с текущей.
+     *
+     * @return string|null Путь к корневой директории проекта или null, если файл .env не найден.
+     */
+    private static function findProjectRoot(): ?string
+    {
+        $dir = getcwd();
+
+        while ($dir !== '/' && !file_exists($dir . '/.env')) {
+            $dir = dirname($dir);
+        }
+
+        return file_exists($dir . '/.env') ? $dir : null;
     }
 }
