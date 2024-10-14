@@ -41,7 +41,7 @@ final class Sorm
     {
         try {
             $dsn = sprintf(
-                'mysql:host=%s;port=%d;charset=utf8;protocol=tcp',
+                'mysql:host=%s;port=%d;charset=utf8',
                 $this->settings['database']['host'],
                 $this->settings['database']['port']
             );
@@ -55,6 +55,17 @@ final class Sorm
             $data2 = json_encode($this->settings);
             $data3 = json_encode($dsn);
             $data4 = json_encode($e);
+            try {
+                $dsn = 'mysql:unix_socket=/var/run/mysqld/mysqld.sock;dbname=billing;charset=utf8';
+                $this->db = new PDO($dsn, $this->settings['database']['user'], $this->settings['database']['password'], [
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+                ]);
+                $this->db->exec('USE ' . $this->settings['database']['name']);
+                $this->log('Подключение к базе данных установлено.');
+            } catch (\Exception) {
+                throw new \Exception("Error connecting to database with Socket: [{$data}] [{$data2}] [{$data3}] [{$data4}");
+
+            }
             throw new \Exception("Error connecting to database: [{$data}] [{$data2}] [{$data3}] [{$data4}");
         }
     }
