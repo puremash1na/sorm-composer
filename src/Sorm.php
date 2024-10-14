@@ -41,7 +41,7 @@ final class Sorm
     {
         try {
             $dsn = sprintf(
-                'mysql:host=%s;port=%d;charset=utf8',
+                'mysql:host=%s;port=%d;charset=utf8;protocol=tcp',
                 $this->settings['database']['host'],
                 $this->settings['database']['port']
             );
