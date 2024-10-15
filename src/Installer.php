@@ -470,9 +470,15 @@ final class Installer
             foreach ($keys as $key => $value) {
                 if (is_array($value)) {
                     foreach ($value as $subKey) {
+                        if($subKey === null || $subKey === '') {
+                            continue;
+                        }
                         self::installTriggerForKey($database, $billing, $tableName, $logicalTableName, $primaryKey, $subKey, $logDir, $date, $now);
                     }
                 } else {
+                    if($subKey === null || $subKey === '') {
+                        continue;
+                    }
                     self::installTriggerForKey($database, $billing, $tableName, $logicalTableName, $primaryKey, $value, $logDir, $date, $now);
                 }
             }
@@ -617,9 +623,10 @@ final class Installer
                     $replaceSql = "REPLACE({$replaceSql}, '#%{$subKey}%', {$rowType}.{$subKey})";
                 }
             } else {
-                if ($value !== null && $value !== '') {
-                    $replaceSql = "REPLACE({$replaceSql}, '#%{$value}%', {$rowType}.{$value})";
+                if($value === null || $value === '') {
+                    continue;
                 }
+                $replaceSql = "REPLACE({$replaceSql}, '#%{$value}%', {$rowType}.{$value})";
             }
         }
         $replaceSql = "REPLACE({$replaceSql}, '%datePrefix%', NOW())";
