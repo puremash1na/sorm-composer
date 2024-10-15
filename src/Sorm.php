@@ -48,7 +48,7 @@ final class Sorm
      * @return PDO|null
      * @throws Exception
      */
-    public static function initDatabase(): ?PDO
+    public static function initDatabase(?string $paymentMethod = ''): ?PDO
     {
         self::loadSettings();
         try {

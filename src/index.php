@@ -25,6 +25,7 @@ if (php_sapi_name() === 'cli') {
                 echo "Запуск миграции logs_edit и триггеров для отслеживания изменении в БД:";
                 SormModule\Installer::installMigrations();
                 SormModule\Installer::installTriggers();
+                break;
             default:
                 echo "Неизвестная команда: {$command}. Доступные команды: start, cron.\n";
                 break;
