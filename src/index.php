@@ -21,6 +21,10 @@ if (php_sapi_name() === 'cli') {
                 $settins = \json_encode($settings,true);
                 echo "Параметры settings: $settins\n";
                 break;
+            case 'install':
+                echo "Запуск миграции logs_edit и триггеров для отслеживания изменении в БД:";
+                SormModule\Installer::installMigrations();
+                SormModule\Installer::installTriggers();
             default:
                 echo "Неизвестная команда: {$command}. Доступные команды: start, cron.\n";
                 break;

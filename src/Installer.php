@@ -217,4 +217,91 @@ final class Installer
 
         return file_exists($dir . '/.env') ? $dir : null;
     }
+    private static function getLogDir(): ?string
+    {
+        $rootDir = self::findProjectRoot();
+        if (!$rootDir) {
+            echo "Project root (.env) not found.";
+            return null;
+        }
+
+        return '/sorm/logs';
+    }
+    /**
+     * @throws \Exception
+     */
+    public static function installMigrations(): void
+    {
+        $database = Sorm::initDatabase();
+
+        $sql = "
+        CREATE TABLE IF NOT EXISTS logs_edit (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            tableName VARCHAR(255) NOT NULL,
+            recordId INT NOT NULL,
+            action VARCHAR(50) NOT NULL,
+            data JSON NOT NULL,
+            comment TEXT NOT NULL,
+            changedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+    ";
+        $logDir = self::getLogDir();
+        $date = date('d-m-Y');
+        $now = date('H:i:s');
+        try {
+            $stmt = $database->prepare($sql);
+            $stmt->execute();
+            echo "[Migrations] Таблица logs_edit успешно создана.\n";
+            file_put_contents($logDir . "/migrations-{$date}.log", "[$now] [Migrations] Таблица logs_edit успешно создана.\n", FILE_APPEND);
+        } catch (\Exception $e) {
+            echo "[Migrations] Ошибка при создании таблицы logs_edit: {$e->getMessage()}\n";
+            file_put_contents($logDir . "/migrations-{$date}.log", "[$now] [Migrations] Ошибка при создании таблицы logs_edit: {$e->getMessage()}\n", FILE_APPEND);
+        }
+    }
+
+
+    /**
+     * @throws \Exception
+     */
+    public static function installTriggers(): void
+    {
+        $database = Sorm::initDatabase();
+
+        $tables = $database->query("SHOW TABLES")->fetchAll(\PDO::FETCH_COLUMN);
+        $logDir = self::getLogDir();
+        $date = date('d-m-Y');
+        $now = date('H:i:s');
+        foreach ($tables as $table) {
+            $triggerName = "before_{$table}_update";
+            $sql = "
+            CREATE TRIGGER {$triggerName}
+            BEFORE UPDATE ON {$table}
+            FOR EACH ROW
+            BEGIN
+                INSERT INTO logs_edit (tableName, recordId, action, data, comment)
+                VALUES (
+                    '{$table}', 
+                    OLD.id, 
+                    'UPDATE', 
+                    JSON_OBJECT(
+                        'old', OLD.data,
+                        'new', NEW.data
+                    ), 
+                    CONCAT('Изменение в таблице {$table}. Время: ', NOW(), '. Предыдущее значение: ', OLD.data)
+                );
+            END;
+        ";
+
+            try {
+                $stmt = $database->prepare($sql);
+                $stmt->execute();
+                echo "[Migrations] Триггер для таблицы {$table} успешно создан.\n";
+                file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Триггер для таблицы {$table} успешно создан.\n", FILE_APPEND);
+            } catch (\Exception $e) {
+                file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Ошибка создания триггера для таблицы {$table}: {$e->getMessage()}\n", FILE_APPEND);
+                echo "[Migrations] Ошибка создания триггера для таблицы {$table}: {$e->getMessage()}\n";
+            }
+        }
+    }
+
 }
