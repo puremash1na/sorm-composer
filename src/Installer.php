@@ -13,22 +13,22 @@ use Symfony\Component\Yaml\Yaml;
 final class Installer
 {
     public const PREFIX_INSERT_INTO_DESCRIPTION = [
-        'logs_is'         => "Пользователь [#%userId%] перешел %urlPath%. Время: %date%",
-        'operations'      => "Пользователь [#%userId%] совершил операцию [#%payId%], Name: %payName%, Время: %date%",
-        'orders'          => "Пользователю [#%userId%] добавлена новая услуга [#%orderId%]. Время: %date%",
-        'payment_methods' => "Администратор добавил новый платежный метод: %payName%, Отображание: %visible%, Время: %date%",
-        'person'          => "Зарегестрирован новый пользователь [#%userId%], Время: %date%",
-        'tariffs'         => "Администратор добавил новый тариф [#%tariffId%], Время: %date%",
-        'tickets'         => "Пользователь [#%userId%] создал/ответил в запросах [#ticketId], Время: %date%",
+        'logs_is'         => "Пользователь [#%userId%] перешел %urlPath%. Время: %datePrefix%",
+        'operations'      => "Пользователь [#%userId%] совершил операцию [#%payId%], Name: %payName%, Время: %datePrefix%",
+        'orders'          => "Пользователю [#%userId%] добавлена новая услуга [#%orderId%]. Время: %datePrefix%",
+        'payment_methods' => "Администратор добавил новый платежный метод: %payName%, Отображание: %visible%, Время: %datePrefix%",
+        'person'          => "Зарегестрирован новый пользователь [#%userId%], Время: %datePrefix%",
+        'tariffs'         => "Администратор добавил новый тариф [#%tariffId%], Время: %datePrefix%",
+        'tickets'         => "Пользователь [#%userId%] создал/ответил в запросах [#%ticketId%], Время: %datePrefix%",
     ];
     public const PREFIX_DELETE_DESCRIPTION = [
-        'logs_is'         => "Удалена запись по переходу пользователя [#%userId%], path: %urlPath%. Время: %date%",
-        'operations'      => "Удалена запись о совершении операции [#%payId%] пользователем [#%userId%], Name: %payName%, Время: %date%",
-        'orders'          => "Удалена запись о добавлении новой услуги [#%orderId%] пользователю [#%userId%], Время: %date%",
-        'payment_methods' => "Удалена запись о добавлении нового платежного метода [%payName%] администратором, Время: %date%",
+        'logs_is'         => "Удалена запись по переходу пользователя [#%userId%], path: %urlPath%. Время: %datePrefix%",
+        'operations'      => "Удалена запись о совершении операции [#%payId%] пользователем [#%userId%], Name: %payName%, Время: %datePrefix%",
+        'orders'          => "Удалена запись о добавлении новой услуги [#%orderId%] пользователю [#%userId%], Время: %datePrefix%",
+        'payment_methods' => "Удалена запись о добавлении нового платежного метода [%payName%] администратором, Время: %datePrefix%",
         'person'          => "Удалена запись о регистрации нового пользователя [#%userId%], Время: %date%",
-        'tariffs'         => "Удалена запись о добавлении нового тарифа [#%tariffId%] администратором, Время: %date%",
-        'tickets'         => "Удалена запись о создании/ответа в запросах [#ticketId] пользователем [#%userId%, Время: %date%"
+        'tariffs'         => "Удалена запись о добавлении нового тарифа [#%tariffId%] администратором, Время: %datePrefix%",
+        'tickets'         => "Удалена запись о создании/ответа в запросах [#%ticketId%] пользователем [#%userId%], Время: %datePrefix%"
     ];
     /**
      * Ru: Устанавливает модуль SORM, создавая необходимые директории и файлы конфигурации в корне проекта.
@@ -537,25 +537,18 @@ final class Installer
         $sqlDrop = "DROP TRIGGER IF EXISTS {$triggerName}";
         $database->exec($sqlDrop);
 
-        // Логика создания триггера
+        // Создание SQL для триггера
         $sqlCreate = "
     CREATE TRIGGER {$triggerName} BEFORE {$operation} ON {$tableName}
     FOR EACH ROW
     BEGIN
         DECLARE logMessage TEXT;
 
+        -- Генерация сообщения для INSERT и DELETE
         IF '{$operation}' = 'INSERT' THEN
-            SET logMessage = REPLACE(
-                REPLACE('{$logTemplate}', '#%userId%', NEW.{$primaryKey}),
-                '%date%', NOW()
-            );
-
+            SET logMessage = " . self::replaceMulti($logTemplate, 'NEW', $tableName) . ";
         ELSIF '{$operation}' = 'DELETE' THEN
-            SET logMessage = REPLACE(
-                REPLACE('{$logTemplate}', '#%userId%', OLD.{$primaryKey}),
-                '%date%', NOW()
-            );
-
+            SET logMessage = " . self::replaceMulti($logTemplate, 'OLD', $tableName) . ";
         ELSE -- Обработка UPDATE
             IF OLD.{$field} != NEW.{$field} THEN
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
@@ -573,35 +566,66 @@ final class Installer
         IF '{$operation}' IN ('INSERT', 'DELETE') THEN
             INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
             VALUES (
-                '{$tableName}', 
-                IFNULL(NEW.{$primaryKey}, OLD.{$primaryKey}), 
-                '{$operation}', 
-                '{}', 
+                '{$tableName}',
+                IFNULL(NEW.{$primaryKey}, OLD.{$primaryKey}),
+                '{$operation}',
+                '{}',
                 logMessage
             );
         END IF;
     END;
     ";
 
-        // Выполнение SQL создания триггера
-        $data = print_r($field, true);
         try {
             $stmt = $database->prepare($sqlCreate);
             $stmt->execute();
-            echo "[Migrations] Триггер для таблицы {$tableName}[$data][$operation]: успешно создан.\n";
+            echo "[Migrations] Триггер для таблицы {$tableName}[$field][$operation]: успешно создан.\n";
             file_put_contents(
-                $logDir . "/triggers-{$date}.log",
-                "[$now] [Migrations] Триггер для таблицы {$tableName}[$data][$operation]: успешно создан.\n",
+                "{$logDir}/triggers-{$date}.log",
+                "[$now] [Migrations] Триггер для таблицы {$tableName}[$field][$operation]: успешно создан.\n",
                 FILE_APPEND
             );
         } catch (\Exception $e) {
             file_put_contents(
-                $logDir . "/triggers-{$date}.log",
-                "[$now] [Migrations] Ошибка создания триггера для таблицы {$tableName}[$data][$operation]: {$e->getMessage()}\n",
+                "{$logDir}/triggers-{$date}.log",
+                "[$now] [Migrations] Ошибка создания триггера для таблицы {$tableName}[$field][$operation]: {$e->getMessage()}\n",
                 FILE_APPEND
             );
-            echo "[Migrations] Ошибка создания триггера для таблицы {$tableName}[$data][$operation]: {$e->getMessage()}\n";
+            echo "[Migrations] Ошибка создания триггера для таблицы {$tableName}[$field][$operation]: {$e->getMessage()}\n";
         }
+    }
+
+    private static function replaceMulti(string $template, string $rowType, string $tableName): string
+    {
+        $settings = Sorm::loadSettings();
+        $associationsKeys = $settings['associationsKeys'];
+
+        $keys = $associationsKeys[$tableName] ?? null;
+        if (!$keys) {
+            echo "[Error] Ключи для таблицы {$tableName} не найдены.\n";
+            return $template;
+        }
+
+        $replaceSql = "'{$template}'";
+
+        foreach ($keys as $key => $value) {
+            if (is_array($value)) {
+                foreach ($value as $subKey) {
+                    if ($subKey === null || $subKey === '') {
+                        continue;
+                    }
+                    $replaceSql = "REPLACE({$replaceSql}, '#%{$subKey}%', {$rowType}.{$subKey})";
+                }
+            } else {
+                if ($value !== null && $value !== '') {
+                    $replaceSql = "REPLACE({$replaceSql}, '#%{$value}%', {$rowType}.{$value})";
+                }
+            }
+        }
+        $replaceSql = "REPLACE({$replaceSql}, '%datePrefix%', NOW())";
+
+        // Возвращаем строку с вложенными REPLACE
+        return $replaceSql;
     }
 
     /**
