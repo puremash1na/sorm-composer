@@ -552,9 +552,9 @@ final class Installer
 
         -- Генерация сообщения для INSERT и DELETE
         IF '{$operation}' = 'INSERT' THEN
-            SET logMessage = " . self::replaceMulti($logTemplate, 'NEW', $tableName) . ";
+            SET logMessage = " . self::replaceMulti($logTemplate) . ";
         ELSIF '{$operation}' = 'DELETE' THEN
-            SET logMessage = " . self::replaceMulti($logTemplate, 'OLD', $tableName) . ";
+            SET logMessage = " . self::replaceMulti($logTemplate) . ";
         ELSE -- Обработка UPDATE
             IF OLD.{$field} != NEW.{$field} THEN
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
@@ -601,34 +601,42 @@ final class Installer
         }
     }
 
-    private static function replaceMulti(string $template, string $rowType, string $tableName): string
+    private static function replaceMulti(string $template): string
     {
-        $settings = Sorm::loadSettings();
+        $settings         = Sorm::loadSettings();
+        $associationsDb   = $settings['associationsDb'];
         $associationsKeys = $settings['associationsKeys'];
 
-        $keys = $associationsKeys[$tableName] ?? null;
-        if (!$keys) {
-            echo "[Error] Ключи для таблицы {$tableName} не найдены.\n";
-            return $template;
-        }
-
+        // Начальная строка для замены шаблонов
         $replaceSql = "'{$template}'";
 
-        foreach ($keys as $key => $value) {
-            if (is_array($value)) {
-                foreach ($value as $subKey) {
-                    if ($subKey === null || $subKey === '') {
-                        continue;
+        // Перебираем все базы данных из конфигурации
+        foreach ($associationsDb as $logicalTableName => $dbConfig) {
+            $keys = $associationsKeys[$logicalTableName] ?? null;
+            if (!$keys) {
+                echo "[Error] Ключи для таблицы {$logicalTableName} не найдены.\n";
+                continue;
+            }
+
+            // Перебираем ключи и добавляем вложенные замены
+            foreach ($keys as $key => $value) {
+                if (is_array($value)) {
+                    foreach ($value as $subKey) {
+                        if ($subKey !== null && $subKey !== '') {
+                            // Вложенная замена
+                            $replaceSql = "REPLACE({$replaceSql}, '#%{$subKey}%', NEW.{$subKey})";
+                        }
                     }
-                    $replaceSql = "REPLACE({$replaceSql}, '#%{$subKey}%', {$rowType}.{$subKey})";
+                } else {
+                    if ($value !== null && $value !== '') {
+                        // Вложенная замена
+                        $replaceSql = "REPLACE({$replaceSql}, '#%{$key}%', NEW.{$value})";
+                    }
                 }
-            } else {
-                if($value === null || $value === '') {
-                    continue;
-                }
-                $replaceSql = "REPLACE({$replaceSql}, '#%{$value}%', {$rowType}.{$value})";
             }
         }
+
+        // Добавляем замену для %datePrefix%
         $replaceSql = "REPLACE({$replaceSql}, '%datePrefix%', NOW())";
 
         // Возвращаем строку с вложенными REPLACE
