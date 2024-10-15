@@ -260,14 +260,10 @@ final class Installer
     }
 
 
-    /**
-     * @throws \Exception
-     */
     public static function installTriggers(): void
     {
-        $database = Sorm::initDatabase();
         $settings = Sorm::loadSettings();
-        $associationsDb   = $settings['associationsDb'];
+        $associationsDb = $settings['associationsDb'];
         $associationsKeys = $settings['associationsKeys'];
 
         $logDir = self::getLogDir();
@@ -278,9 +274,21 @@ final class Installer
         $date = date('d-m-Y');
         $now = date('H:i:s');
 
-        foreach ($associationsDb as $logicalTableName => $actualTableName) {
-            $keys = $associationsKeys[$logicalTableName] ?? null;
+        foreach ($associationsDb as $logicalTableName => $dbConfig) {
+            $dbType = key($dbConfig); // Это может быть 'database' или 'paymmentMethods'
+            $tableName = $dbConfig[$dbType];
 
+            // Получаем соответствующие креды для базы данных
+            $dbCreds = $settings[$dbType] ?? null;
+            if (!$dbCreds) {
+                echo "[Error] Креды для базы данных {$dbType} не найдены.\n";
+                continue;
+            }
+
+            // Инициализация соединения с базой данных
+            $database = self::initDatabaseConnection($dbCreds);
+
+            $keys = $associationsKeys[$logicalTableName] ?? null;
             if (!$keys) {
                 continue;
             }
@@ -293,82 +301,98 @@ final class Installer
                         if($subKey === null || $subKey === '') {
                             continue;
                         }
-                        $triggerName = "before_{$actualTableName}_update_{$subKey}";
+                        $triggerName = "before_{$tableName}_update_{$subKey}";
 
                         // Удаляем существующий триггер, если он уже есть
                         $sqlDrop = "DROP TRIGGER IF EXISTS {$triggerName}";
                         $database->exec($sqlDrop);
 
+                        // Создаём новый триггер с проверками на пустые данные и изменение данных
                         $sqlCreate = "
                     CREATE TRIGGER {$triggerName}
-                    BEFORE UPDATE ON {$actualTableName}
+                    BEFORE UPDATE ON {$tableName}
                     FOR EACH ROW
                     BEGIN
                         IF OLD.{$subKey} IS NOT NULL AND NEW.{$subKey} IS NOT NULL AND OLD.{$subKey} != NEW.{$subKey} THEN
                             INSERT INTO logs_edit (tableName, recordId, action, data, comment)
                             VALUES (
-                                '{$actualTableName}', 
+                                '{$tableName}', 
                                 OLD.{$primaryKey},
                                 'UPDATE', 
                                 JSON_OBJECT(
                                     'old', OLD.{$subKey},
                                     'new', NEW.{$subKey}
                                 ), 
-                                CONCAT('Изменение в таблице {$actualTableName}. Поле: {$subKey}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$subKey})
+                                CONCAT('Изменение в таблице {$tableName}. Поле: {$subKey}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$subKey})
                             );
                         END IF;
                     END;
                     ";
-                        self::executeTrigger($database, $sqlCreate, $actualTableName, $logDir, $date, $now,$subKey);
+                        self::executeTrigger($database, $sqlCreate, $tableName, $logDir, $date, $now,$subKey);
                     }
                 } else {
                     if($value === null || $value === '') {
                         continue;
                     }
-                    $triggerName = "before_{$actualTableName}_update_{$value}";
+                    $triggerName = "before_{$tableName}_update_{$value}";
 
                     // Удаляем существующий триггер, если он уже есть
                     $sqlDrop = "DROP TRIGGER IF EXISTS {$triggerName}";
                     $database->exec($sqlDrop);
 
+                    // Создаём новый триггер с проверками на пустые данные и изменение данных
                     $sqlCreate = "
                 CREATE TRIGGER {$triggerName}
-                BEFORE UPDATE ON {$actualTableName}
+                BEFORE UPDATE ON {$tableName}
                 FOR EACH ROW
                 BEGIN
                     IF OLD.{$value} IS NOT NULL AND NEW.{$value} IS NOT NULL AND OLD.{$value} != NEW.{$value} THEN
                         INSERT INTO logs_edit (tableName, recordId, action, data, comment)
                         VALUES (
-                            '{$actualTableName}', 
+                            '{$tableName}', 
                             OLD.{$primaryKey},
                             'UPDATE', 
                             JSON_OBJECT(
                                 'old', OLD.{$value},
                                 'new', NEW.{$value}
                             ), 
-                            CONCAT('Изменение в таблице {$actualTableName}. Поле: {$value}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$value})
+                            CONCAT('Изменение в таблице {$tableName}. Поле: {$value}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$value})
                         );
                     END IF;
                 END;
                 ";
-                    self::executeTrigger($database, $sqlCreate, $actualTableName, $logDir, $date, $now, $value);
+                    self::executeTrigger($database, $sqlCreate, $tableName, $logDir, $date, $now,$value);
                 }
             }
         }
     }
 
-    private static function executeTrigger($database, $sql, $actualTableName, $logDir, $date, $now, $value): void
+    /**
+     * Инициализация подключения к базе данных с учетом переданных кредов.
+     */
+    private static function initDatabaseConnection(array $dbCreds): ?\PDO
     {
+        $dsn = "mysql:host={$dbCreds['host']};port={$dbCreds['port']};dbname={$dbCreds['name']}";
+        try {
+            return new \PDO($dsn, $dbCreds['user'], $dbCreds['password']);
+        } catch (\PDOException $e) {
+            echo "[Error] Не удалось подключиться к базе данных: " . $e->getMessage() . "\n";
+            return null;
+        }
+    }
+
+    private static function executeTrigger($database, $sql, $tableName, $logDir, $date, $now, $key): void
+    {
+        $data = print_r($key,true);
         try {
             $stmt = $database->prepare($sql);
             $stmt->execute();
-            $data = print_r($value, true);
-            echo "[Migrations] Триггер для таблицы {$actualTableName} $data успешно создан.\n";
-            file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Триггер для таблицы {$actualTableName} $data успешно создан.\n", FILE_APPEND);
+            echo "[Migrations] Триггер для таблицы {$tableName} key: $data успешно создан.\n";
+            file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Триггер для таблицы {$tableName} key: $data успешно создан.\n", FILE_APPEND);
         } catch (\Exception $e) {
-            $data = print_r($value, true);
-            file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Ошибка создания триггера для таблицы {$actualTableName} $data: {$e->getMessage()}\n", FILE_APPEND);
-            echo "[Migrations] Ошибка создания триггера для таблицы {$actualTableName} $data: {$e->getMessage()}\n";
+            file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Ошибка создания триггера для таблицы {$tableName} key: $data: {$e->getMessage()}\n", FILE_APPEND);
+            echo "[Migrations] Ошибка создания триггера для таблицы {$tableName} key: $data: {$e->getMessage()}\n";
         }
     }
+
 }
