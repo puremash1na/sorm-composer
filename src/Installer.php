@@ -13,9 +13,18 @@ use Symfony\Component\Yaml\Yaml;
 final class Installer
 {
     /**
-     * Installs the SORM module by creating necessary directories and configuration files in the project root.
+     * Ru: Устанавливает модуль SORM, создавая необходимые директории и файлы конфигурации в корне проекта.
      *
-     * This method:
+     * En: Installs the SORM module by creating necessary directories and configuration files in the project root.
+     *
+     * Ru: Этот метод:
+     * - Выполняет поиск файла .env для определения корневого каталога проекта.
+     * - Создает каталог журналов для модуля SORM, если он еще не существует.
+     * - Создает settings.yaml с настройками по умолчанию, если он не существует.
+     * - Копирует файл Sorm.php в корневой каталог проекта.
+     * - Записывает сообщения об успешном завершении или сбое в файл журнала в каталоге logs.
+     *
+     * En: This method:
      * - Searches for the .env file to determine the project root directory.
      * - Creates a logs directory for the SORM module if it doesn't already exist.
      * - Generates a settings.yaml file with default configuration if it does not exist.
@@ -24,7 +33,7 @@ final class Installer
      *
      * @return void
      */
-    public static function install()
+    public static function install(): void
     {
         // Определяем корневую папку проекта по наличию файла .env
         $rootDir = self::findProjectRoot();
@@ -202,9 +211,11 @@ final class Installer
     }
 
     /**
-     * Находит корневую директорию проекта по наличию файла .env.
+     * Ru: Находит корневую директорию проекта по наличию файла .env.
      * Рекурсивно поднимается по дереву директорий, начиная с текущей.
      *
+     * En: Finds the root directory of the project by the presence of the .env file.
+     * Recursively climbs the directory tree, starting from the current one.
      * @return string|null Путь к корневой директории проекта или null, если файл .env не найден.
      */
     private static function findProjectRoot(): ?string
@@ -217,6 +228,13 @@ final class Installer
 
         return file_exists($dir . '/.env') ? $dir : null;
     }
+
+    /**
+     * Ru: Находит каталог журналов для модуля SORM
+     *
+     * En: Finds the log catalog for the SORM module
+     * @return string|null
+     */
     private static function getLogDir(): ?string
     {
         $rootDir = self::findProjectRoot();
@@ -228,6 +246,11 @@ final class Installer
         return '/sorm/logs';
     }
     /**
+     * Ru: Запуск миграции logs_edit для отслеживаия изменений в базе данных
+     *
+     * En: Running logs_edit migration to track changes in the database
+     *
+     * @see Installer::install()
      * @throws \Exception
      */
     public static function installMigrations(): void
@@ -258,7 +281,14 @@ final class Installer
             file_put_contents($logDir . "/migrations-{$date}.log", "[$now] [Migrations] Ошибка при создании таблицы logs_edit: {$e->getMessage()}\n", FILE_APPEND);
         }
     }
-
+    /**
+     * Ru: Удаление триггеров в базе данных, у таблиц и полей которые должны отслеживаться
+     *
+     * En: Removing triggers in the database, tables and fields that should be monitored
+     *
+     * @see Installer::install()
+     * @throws \Exception
+     */
     public static function deleteTriggers(): void
     {
         $settings         = Sorm::loadSettings();
@@ -330,6 +360,14 @@ final class Installer
             }
         }
     }
+    /**
+     * Ru: Установка триггеров в базе данных, у таблиц и полей которые должны отслеживаться
+     *
+     * En: Setting triggers in the database, tables and fields that should be monitored
+     *
+     * @see Installer::install()
+     * @throws \Exception
+     */
     public static function installTriggers(): void
     {
         $settings = Sorm::loadSettings();
@@ -527,7 +565,12 @@ final class Installer
     }
 
     /**
-     * Инициализация подключения к базе данных с учетом переданных кредов.
+     * Ru: Инициализация с базой данных исходя из ее данных авторизации
+     *
+     * En: Initialization with the database based on its authorization data
+     *
+     * @param array $dbCreds
+     * @return \PDO|null
      */
     private static function initDatabaseConnection(array $dbCreds): ?\PDO
     {
@@ -540,8 +583,44 @@ final class Installer
         }
     }
 
-    private static function executeTrigger($database, $sql, $tableName, $logDir, $date, $now, $key): void
-    {
+    /**
+     * Ru: Выполнение необходимых триггеров поотдельности, чтобы база данных не умерла
+     * [1] - Соединение с базой данных
+     * [2] - SQL запрос на выполнение
+     * [3] - Название таблицы
+     * [4] - Каталог журнала
+     * [5] - Текущая дата (d-m-Y)
+     * [6] - Текущее время (H:i:s)
+     * [7] - Ключ поле / столбца
+     *
+     * En: Performing the necessary separation triggers so that the database does not die
+     * [1] - Database connection
+     * [2] - SQL execution request
+     * [3] - Name of the table
+     * [4] - Magazine catalog
+     * [5] - Current date (d-m-Y)
+     * [6] - Current time (H:i:s)
+     * [7] - Key field / column
+     *
+     * @param \PDO|null   $database  - [1]
+     * @param string      $sql       - [2]
+     * @param string|null $tableName - [3]
+     * @param string|null $logDir    - [4]
+     * @param string|null $date      - [5]
+     * @param string|null $now       - [6]
+     * @param string|null $key       - [7]
+     * @return void
+     */
+    private static function executeTrigger(
+        ?\PDO $database,
+        string $sql,
+        ?string $tableName,
+        ?string $logDir,
+        ?string $date,
+        ?string $now,
+        ?string $key
+    ): void {
+
         $data = print_r($key,true);
         try {
             $stmt = $database->prepare($sql);
