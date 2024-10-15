@@ -35,10 +35,8 @@ final class Installer
 
         $logDir = $rootDir . '/sorm/logs';
         $settingsPath = $rootDir . '/sorm/settings.yaml';
-        $executable = $rootDir . '/sorm/Sorm.php';
-        $srcSorm = file_get_contents(__DIR__ . '/Sorm.php');
-        $executableExport = $rootDir . '/sorm/ExportSorm.php';
-        $srcSormExport = file_get_contents(__DIR__ . '/Service/ExportData.php');
+        $executable = $rootDir . '/sorm/index.php';
+        $srcSorm = file_get_contents(__DIR__ . '/index.php');
 
         // Текущая дата и время для логов
         $date = date('d-m-Y');
@@ -80,22 +78,13 @@ final class Installer
             }
         }
 
-        // Копируем Sorm.php, если его нет
+        // Копируем index.php, если его нет
         if (!file_exists($executable)) {
             if (file_put_contents($executable, $srcSorm)) {
                 // Логируем успешное создание файла
-                file_put_contents($logDir . "/install-{$date}.log", "[$now] Sorm.php file created.\n", FILE_APPEND);
+                file_put_contents($logDir . "/install-{$date}.log", "[$now] index.php file created.\n", FILE_APPEND);
             } else {
-                file_put_contents($logDir . "/install-{$date}.log", "[$now] Failed to create Sorm.php file: $error\n", FILE_APPEND);
-            }
-        }
-        // Копируем ExportData.php, если его нет
-        if (!file_exists($executableExport)) {
-            if (file_put_contents($executableExport, $srcSormExport)) {
-                // Логируем успешное создание файла
-                file_put_contents($logDir . "/install-{$date}.log", "[$now] ExportData.php file created.\n", FILE_APPEND);
-            } else {
-                file_put_contents($logDir . "/install-{$date}.log", "[$now] Failed to create ExportData.php file: $error\n", FILE_APPEND);
+                file_put_contents($logDir . "/install-{$date}.log", "[$now] Failed to create index.php file: $error\n", FILE_APPEND);
             }
         }
     }
