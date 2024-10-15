@@ -359,11 +359,31 @@ final class Installer
                         $triggerName       = "before_{$tableName}_update_{$subKey}";
                         $triggerNameUpdate = "before_{$tableName}_update";
 
+                        $triggerNameInsertSub = "before_{$tableName}_insert_{$subKey}";
+                        $triggerNameInsert    = "before_{$tableName}_insert";
+
+                        $triggerNameDeleteSub = "before_{$tableName}_delete_{$subKey}";
+                        $triggerNameDelete    = "before_{$tableName}_delete";
+
                         // Удаляем существующий триггер, если он уже есть
-                        $sqlDrop = "DROP TRIGGER IF EXISTS {$triggerName}";
+                        $sqlDrop       = "DROP TRIGGER IF EXISTS {$triggerName}";
                         $sqlDropUpdate = "DROP TRIGGER IF EXISTS {$triggerNameUpdate}";
+
+                        $sqlDropInsertSub = "DROP TRIGGER IF EXISTS {$triggerNameInsertSub}";
+                        $sqlDropInsert    = "DROP TRIGGER IF EXISTS {$triggerNameInsert}";
+
+                        $sqlDropDeleteSub = "DROP TRIGGER IF EXISTS {$triggerNameDeleteSub}";
+                        $sqlDropDelete    = "DROP TRIGGER IF EXISTS {$triggerNameDelete}";
+
                         $database->exec($sqlDrop);
                         $database->exec($sqlDropUpdate);
+
+                        $database->exec($sqlDropInsertSub);
+                        $database->exec($sqlDropInsert);
+
+                        $database->exec($sqlDropDeleteSub);
+                        $database->exec($sqlDropDelete);
+
                         echo "[Migrations] Триггер для таблицы {$tableName}[$subKey]: успешно удален.\n";
                         file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Триггер для таблицы {$tableName}[$subKey]: успешно удален.\n", FILE_APPEND);
                     }
@@ -374,11 +394,30 @@ final class Installer
                     $triggerName       = "before_{$tableName}_update_{$value}";
                     $triggerNameUpdate = "before_{$tableName}_update";
 
+                    $triggerNameInsertSub = "before_{$tableName}_insert_{$value}";
+                    $triggerNameInsert    = "before_{$tableName}_insert";
+
+                    $triggerNameDeleteSub = "before_{$tableName}_delete_{$value}";
+                    $triggerNameDelete    = "before_{$tableName}_delete";
+
                     // Удаляем существующий триггер, если он уже есть
                     $sqlDrop       = "DROP TRIGGER IF EXISTS {$triggerName}";
                     $sqlDropUpdate = "DROP TRIGGER IF EXISTS {$triggerNameUpdate}";
+
+                    $sqlDropInsertSub = "DROP TRIGGER IF EXISTS {$triggerNameInsertSub}";
+                    $sqlDropInsert    = "DROP TRIGGER IF EXISTS {$triggerNameInsert}";
+
+                    $sqlDropDeleteSub = "DROP TRIGGER IF EXISTS {$triggerNameDeleteSub}";
+                    $sqlDropDelete    = "DROP TRIGGER IF EXISTS {$triggerNameDelete}";
+
                     $database->exec($sqlDrop);
                     $database->exec($sqlDropUpdate);
+
+                    $database->exec($sqlDropInsertSub);
+                    $database->exec($sqlDropInsert);
+
+                    $database->exec($sqlDropDeleteSub);
+                    $database->exec($sqlDropDelete);
                     echo "[Migrations] Триггер для таблицы {$tableName}[$value]: успешно удален.\n";
                     file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Триггер для таблицы {$tableName}[$value]: успешно удален.\n", FILE_APPEND);
 
