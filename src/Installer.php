@@ -674,10 +674,10 @@ final class Installer
         } catch (\Exception $e) {
             file_put_contents(
                 "{$logDir}/triggers-{$date}.log",
-                "[$now] [Migrations] Ошибка создания триггера для таблицы {$tableName}[$field][$operation]: {$e->getMessage()}\n",
+                "[$now] [Migrations] Ошибка создания триггера для таблицы {$tableName}[$field][$operation] [$triggerName]: {$e->getMessage()}\n",
                 FILE_APPEND
             );
-            echo "[Migrations] Ошибка создания триггера для таблицы {$tableName}[$field][$operation]: {$e->getMessage()}\n";
+            echo "[Migrations] Ошибка создания триггера для таблицы {$tableName}[$field][$operation] [$triggerName]: {$e->getMessage()}\n";
         }
     }
 
