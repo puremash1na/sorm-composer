@@ -38,6 +38,7 @@ if (php_sapi_name() === 'cli') {
                 echo "Удаление триггеров из базы данных:";
                 SormModule\Installer::deleteTriggers();
                 sleep(5);
+                break;
             default:
                 echo "Неизвестная команда: {$command}. Формат: php sorm/index.php команда\n";
                 echo "Доступные команды:\n";
