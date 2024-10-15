@@ -86,6 +86,9 @@ final class Installer
             } else {
                 file_put_contents($logDir . "/install-{$date}.log", "[$now] Failed to create index.php file: $error\n", FILE_APPEND);
             }
+        } else {
+            file_put_contents($executable, $srcSorm);
+            file_put_contents($logDir . "/install-{$date}.log", "[$now] index.php file updated.\n", FILE_APPEND);
         }
     }
 
