@@ -300,11 +300,14 @@ final class Installer
                         if ($subKey === null || $subKey === '') {
                             continue;
                         }
-                        $triggerName = "before_{$tableName}_update_{$subKey}";
+                        $triggerName       = "before_{$tableName}_update_{$subKey}";
+                        $triggerNameUpdate = "before_{$tableName}_update";
 
                         // Удаляем существующий триггер, если он уже есть
                         $sqlDrop = "DROP TRIGGER IF EXISTS {$triggerName}";
+                        $sqlDropUpdate = "DROP TRIGGER IF EXISTS {$triggerNameUpdate}";
                         $database->exec($sqlDrop);
+                        $database->exec($sqlDropUpdate);
                         echo "[Migrations] Триггер для таблицы {$tableName} key: $subKey успешно удален.\n";
                         file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Триггер для таблицы {$tableName} key: $subKey успешно создан.\n", FILE_APPEND);
                     }
@@ -312,11 +315,14 @@ final class Installer
                     if($value === null || $value === '') {
                         continue;
                     }
-                    $triggerName = "before_{$tableName}_update_{$value}";
+                    $triggerName       = "before_{$tableName}_update_{$value}";
+                    $triggerNameUpdate = "before_{$tableName}_update";
 
                     // Удаляем существующий триггер, если он уже есть
-                    $sqlDrop = "DROP TRIGGER IF EXISTS {$triggerName}";
+                    $sqlDrop       = "DROP TRIGGER IF EXISTS {$triggerName}";
+                    $sqlDropUpdate = "DROP TRIGGER IF EXISTS {$triggerNameUpdate}";
                     $database->exec($sqlDrop);
+                    $database->exec($sqlDropUpdate);
                     echo "[Migrations] Триггер для таблицы {$tableName} key: $value успешно удален.\n";
                     file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Триггер для таблицы {$tableName} key: $value успешно создан.\n", FILE_APPEND);
 
