@@ -79,15 +79,23 @@ final class Installer
                     'password' => 'dbpassword',
                     'port'     => '3306',
                 ],
+                'paymentMethods' => [
+                    'driver'   => 'mysql',
+                    'host'     => 'localhost',
+                    'name'     => 'dbname',
+                    'user'     => 'dbuser',
+                    'password' => 'dbpassword',
+                    'port'     => '3306',
+                ],
                 'associationsDb' => [
                     // logs_is - БД СОРМ - logs - БД хостера
-                    'logs_is'         => 'logs',
-                    'operations'      => 'pays',
-                    'orders'          => 'orders',
-                    'payment_methods' => 'payment_methods',
-                    'person'          => 'persons',
-                    'tariffs'         => 'tarifs',
-                    'tickets'         => 'tickets',
+                    'logs_is'         => ['database'       => 'logs'],
+                    'operations'      => ['database'       => 'pays'],
+                    'orders'          => ['database'       => 'orders'],
+                    'payment_methods' => ['paymentMethods' => 'payment_methods'],
+                    'person'          => ['database'       => 'persons'],
+                    'tariffs'         => ['database'       => 'tarifs'],
+                    'tickets'         => ['database'       => 'tickets'],
                 ],
                 'associationsKeys' => [
                     // Выше указана связь между logs_is = logs по умолчанию
