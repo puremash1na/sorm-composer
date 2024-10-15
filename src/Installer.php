@@ -12,6 +12,24 @@ use Symfony\Component\Yaml\Yaml;
 
 final class Installer
 {
+    public const PREFIX_INSERT_INTO_DESCRIPTION = [
+        'logs_is'         => "Пользователь [#%userId%] перешел %urlPath%. Время: %date%",
+        'operations'      => "Пользователь [#%userId%] совершил операцию [#%payId%], Name: %payName%, Время: %date%",
+        'orders'          => "Пользователю [#%userId%] добавлена новая услуга [#%orderId%]. Время: %date%",
+        'payment_methods' => "Администратор добавил новый платежный метод: %payName%, Отображание: %visible%, Время: %date%",
+        'person'          => "Зарегестрирован новый пользователь [#%userId%], Время: %date%",
+        'tariffs'         => "Администратор добавил новый тариф [#%tariffId%], Время: %date%",
+        'tickets'         => "Пользователь [#%userId%] создал/ответил в запросах [#ticketId], Время: %date%",
+    ];
+    public const PREFIX_DELETE_DESCRIPTION = [
+        'logs_is'         => "Удалена запись по переходу пользователя [#%userId%], path: %urlPath%. Время: %date%",
+        'operations'      => "Удалена запись о совершении операции [#%payId%] пользователем [#%userId%], Name: %payName%, Время: %date%",
+        'orders'          => "Удалена запись о добавлении новой услуги [#%orderId%] пользователю [#%userId%], Время: %date%",
+        'payment_methods' => "Удалена запись о добавлении нового платежного метода [%payName%] администратором, Время: %date%",
+        'person'          => "Удалена запись о регистрации нового пользователя [#%userId%], Время: %date%",
+        'tariffs'         => "Удалена запись о добавлении нового тарифа [#%tariffId%] администратором, Время: %date%",
+        'tickets'         => "Удалена запись о создании/ответа в запросах [#ticketId] пользователем [#%userId%, Время: %date%"
+    ];
     /**
      * Ru: Устанавливает модуль SORM, создавая необходимые директории и файлы конфигурации в корне проекта.
      *
@@ -376,14 +394,13 @@ final class Installer
      * @see Installer::install()
      * @throws \Exception
      */
-    public static function installTriggers(): void
-    {
+    public static function installTriggers(): void {
         $settings = Sorm::loadSettings();
         $associationsDb = $settings['associationsDb'];
         $associationsKeys = $settings['associationsKeys'];
         $billing = $settings['database']['name'];
-
         $logDir = self::getLogDir();
+
         if (!is_dir($logDir)) {
             mkdir($logDir, 0777, true);
         }
@@ -392,183 +409,127 @@ final class Installer
         $now = date('H:i:s');
 
         foreach ($associationsDb as $logicalTableName => $dbConfig) {
-            $dbType = key($dbConfig); // Это может быть 'database' или 'paymmentMethods'
+            $dbType = key($dbConfig);
             $tableName = $dbConfig[$dbType];
-
-            // Получаем соответствующие креды для базы данных
             $dbCreds = $settings[$dbType] ?? null;
+
             if (!$dbCreds) {
                 echo "[Error] Креды для базы данных {$dbType} не найдены.\n";
                 continue;
             }
 
-            // Инициализация соединения с базой данных
             $database = self::initDatabaseConnection($dbCreds);
-
             $keys = $associationsKeys[$logicalTableName] ?? null;
+
             if (!$keys) {
                 continue;
             }
 
             $primaryKey = $keys['login'] ?? $keys['number'] ?? 'id';
 
+            // Установка триггеров для каждого ключа
             foreach ($keys as $key => $value) {
                 if (is_array($value)) {
                     foreach ($value as $subKey) {
-                        if($subKey === null || $subKey === '') {
-                            continue;
-                        }
-                        $triggerName = "before_{$tableName}_update_{$subKey}";
-
-                        // Удаляем существующий триггер, если он уже есть
-                        $sqlDrop = "DROP TRIGGER IF EXISTS {$triggerName}";
-                        $database->exec($sqlDrop);
-
-                        // Создаём новый триггер с проверками на пустые данные и изменение данных
-                        $sqlCreate = "
-                    CREATE TRIGGER {$triggerName}
-                    BEFORE UPDATE ON {$tableName}
-                    FOR EACH ROW
-                    BEGIN
-                        DECLARE isOldSerialized BOOL;
-                        DECLARE isNewSerialized BOOL;
-                        DECLARE isOldJson BOOL;
-                        DECLARE isNewJson BOOL;
-                        
-                        -- Проверяем, являются ли старые и новые данные сериализованными или JSON
-                        SET isOldSerialized = (OLD.{$subKey} IS NOT NULL AND LEFT(OLD.{$subKey}, 2) = 'a:');
-                        SET isNewSerialized = (NEW.{$subKey} IS NOT NULL AND LEFT(NEW.{$subKey}, 2) = 'a:');
-                        SET isOldJson = (OLD.{$subKey} IS NOT NULL AND LEFT(OLD.{$subKey}, 1) = '{');
-                        SET isNewJson = (NEW.{$subKey} IS NOT NULL AND LEFT(NEW.{$subKey}, 1) = '{');
-
-                        -- Если оба значения сериализованы, сравниваем как массивы
-                        IF isOldSerialized AND isNewSerialized THEN
-                            IF (OLD.{$subKey} != NEW.{$subKey}) THEN
-                                INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-                                VALUES (
-                                    '{$tableName}', 
-                                    OLD.{$primaryKey},
-                                    'UPDATE', 
-                                    JSON_OBJECT(
-                                        'oldValue', OLD.{$subKey},
-                                        'newValue', NEW.{$subKey}
-                                    ), 
-                                    CONCAT('Изменение в таблице {$tableName} [trigger: {$triggerName}]. Поле: {$subKey}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$subKey})
-                                );
-                            END IF;
-
-                        -- Если оба значения JSON, сравниваем как массивы
-                        ELSEIF isOldJson AND isNewJson THEN
-                            IF (JSON_UNQUOTE(JSON_EXTRACT(OLD.{$subKey}, '$')) != JSON_UNQUOTE(JSON_EXTRACT(NEW.{$subKey}, '$'))) THEN
-                                INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-                                VALUES (
-                                    '{$tableName}', 
-                                    OLD.{$primaryKey},
-                                    'UPDATE', 
-                                    JSON_OBJECT(
-                                        'oldValue', OLD.{$subKey},
-                                        'newValue', NEW.{$subKey}
-                                    ), 
-                                    CONCAT('Изменение в таблице {$tableName} [trigger: {$triggerName}]. Поле: {$subKey}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$subKey})
-                                );
-                            END IF;
-
-                        -- Если не сериализованные и не JSON данные, проверяем как обычные строки
-                        ELSEIF (OLD.{$subKey} != NEW.{$subKey}) AND (OLD.{$subKey} IS NOT NULL AND OLD.{$subKey} != '') AND (NEW.{$subKey} IS NOT NULL AND NEW.{$subKey} != '') THEN
-                            INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-                            VALUES (
-                                '{$tableName}', 
-                                OLD.{$primaryKey},
-                                'UPDATE', 
-                                JSON_OBJECT(
-                                    'oldValue', OLD.{$subKey},
-                                    'newValue', NEW.{$subKey}
-                                ), 
-                                CONCAT('Изменение в таблице {$tableName} [trigger: {$triggerName}]. Поле: {$subKey}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$subKey})
-                            );
-                        END IF;
-                    END;
-                    ";
-                        self::executeTrigger($database, $sqlCreate, $tableName, $logDir, $date, $now, $subKey);
+                        self::installTriggerForKey($database, $billing, $tableName, $logicalTableName, $primaryKey, $subKey, $logDir, $date, $now);
                     }
                 } else {
-                    if($value === null || $value === '') {
-                        continue;
-                    }
-                    $triggerName = "before_{$tableName}_update_{$value}";
-
-                    // Удаляем существующий триггер, если он уже есть
-                    $sqlDrop = "DROP TRIGGER IF EXISTS {$triggerName}";
-                    $database->exec($sqlDrop);
-
-                    // Создаём новый триггер с проверками на пустые данные и изменение данных
-                    $sqlCreate = "
-                    CREATE TRIGGER {$triggerName}
-                    BEFORE UPDATE ON {$tableName}
-                    FOR EACH ROW
-                    BEGIN
-                        DECLARE isOldSerialized BOOL;
-                        DECLARE isNewSerialized BOOL;
-                        DECLARE isOldJson BOOL;
-                        DECLARE isNewJson BOOL;
-                        
-                        -- Проверяем, являются ли старые и новые данные сериализованными или JSON
-                        SET isOldSerialized = (OLD.{$value} IS NOT NULL AND LEFT(OLD.{$value}, 2) = 'a:');
-                        SET isNewSerialized = (NEW.{$value} IS NOT NULL AND LEFT(NEW.{$value}, 2) = 'a:');
-                        SET isOldJson = (OLD.{$value} IS NOT NULL AND LEFT(OLD.{$value}, 1) = '{');
-                        SET isNewJson = (NEW.{$value} IS NOT NULL AND LEFT(NEW.{$value}, 1) = '{');
-
-                        -- Если оба значения сериализованы, сравниваем как массивы
-                        IF isOldSerialized AND isNewSerialized THEN
-                            IF (OLD.{$value} != NEW.{$value}) THEN
-                                INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-                                VALUES (
-                                    '{$tableName}', 
-                                    OLD.{$primaryKey},
-                                    'UPDATE', 
-                                    JSON_OBJECT(
-                                        'oldValue', OLD.{$value},
-                                        'newValue', NEW.{$value}
-                                    ), 
-                                    CONCAT('Изменение в таблице {$tableName} [trigger: {$triggerName}]. Поле: {$value}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$value})
-                                );
-                            END IF;
-
-                        -- Если оба значения JSON, сравниваем как массивы
-                        ELSEIF isOldJson AND isNewJson THEN
-                            IF (JSON_UNQUOTE(JSON_EXTRACT(OLD.{$value}, '$')) != JSON_UNQUOTE(JSON_EXTRACT(NEW.{$value}, '$'))) THEN
-                                INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-                                VALUES (
-                                    '{$tableName}', 
-                                    OLD.{$primaryKey},
-                                    'UPDATE', 
-                                    JSON_OBJECT(
-                                        'oldValue', OLD.{$value},
-                                        'newValue', NEW.{$value}
-                                    ), 
-                                    CONCAT('Изменение в таблице {$tableName} [trigger: {$triggerName}]. Поле: {$value}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$value})
-                                );
-                            END IF;
-
-                        -- Если не сериализованные и не JSON данные, проверяем как обычные строки
-                        ELSEIF (OLD.{$value} != NEW.{$value}) AND (OLD.{$value} IS NOT NULL AND OLD.{$value} != '') AND (NEW.{$value} IS NOT NULL AND NEW.{$value} != '') THEN
-                            INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-                            VALUES (
-                                '{$tableName}', 
-                                OLD.{$primaryKey},
-                                'UPDATE', 
-                                JSON_OBJECT(
-                                    'oldValue', OLD.{$value},
-                                    'newValue', NEW.{$value}
-                                ), 
-                                CONCAT('Изменение в таблице {$tableName} [trigger: {$triggerName}]. Поле: {$value}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$value})
-                            );
-                        END IF;
-                    END;
-                    ";
-                    self::executeTrigger($database, $sqlCreate, $tableName, $logDir, $date, $now, $value);
+                    self::installTriggerForKey($database, $billing, $tableName, $logicalTableName, $primaryKey, $value, $logDir, $date, $now);
                 }
             }
+        }
+    }
+
+    private static function installTriggerForKey(
+        ?\PDO $database,
+        string $billing,
+        string $tableName,
+        string $logicalTableName,
+        string $primaryKey,
+        string $field,
+        string $logDir,
+        string $date,
+        string $now
+    ): void {
+
+        if ($field === null || $field === '') {
+            return;
+        }
+
+        // INSERT INTO триггер
+        $insertTriggerName = "before_{$tableName}_insert_{$field}";
+        $insertLog = self::PREFIX_INSERT_INTO_DESCRIPTION[$logicalTableName] ?? '';
+        self::createTrigger($database, $billing, $insertTriggerName, $tableName, 'INSERT', $field, $primaryKey, $insertLog, $logDir, $date, $now);
+
+        // DELETE триггер
+        $deleteTriggerName = "before_{$tableName}_delete_{$field}";
+        $deleteLog = self::PREFIX_DELETE_DESCRIPTION[$logicalTableName] ?? '';
+        self::createTrigger($database, $billing, $deleteTriggerName, $tableName, 'DELETE', $field, $primaryKey, $deleteLog, $logDir, $date, $now);
+
+        // UPDATE триггер (уже был реализован)
+        $updateTriggerName = "before_{$tableName}_update_{$field}";
+        $updateLog = "Изменение в таблице {$tableName} [trigger: {$updateTriggerName}]. Поле: {$field}. Время: {$now}";
+        self::createTrigger($database, $billing, $updateTriggerName, $tableName, 'UPDATE', $field, $primaryKey, $updateLog, $logDir, $date, $now);
+    }
+
+    private static function createTrigger(
+        ?\PDO $database,
+        string $billing,
+        string $triggerName,
+        string $tableName,
+        string $operation,
+        string $field,
+        string $primaryKey,
+        string $logTemplate,
+        string $logDir,
+        string $date,
+        string $now,
+    ): void {
+        // Удаление существующего триггера
+        $sqlDrop = "DROP TRIGGER IF EXISTS {$triggerName}";
+        $database->exec($sqlDrop);
+
+        // Логика создания триггера
+        $sqlCreate = "
+        CREATE TRIGGER {$triggerName} BEFORE {$operation} ON {$tableName}
+        FOR EACH ROW
+        BEGIN
+            DECLARE logMessage TEXT;
+
+            IF '{$operation}' = 'INSERT' THEN
+                SET logMessage = REPLACE(REPLACE('{$logTemplate}', '#%userId%', NEW.{$primaryKey}), '%date%', NOW());
+            ELSEIF '{$operation}' = 'DELETE' THEN
+                SET logMessage = REPLACE(REPLACE('{$logTemplate}', '#%userId%', OLD.{$primaryKey}), '%date%', NOW());
+            ELSE
+                IF OLD.{$field} != NEW.{$field} THEN
+                    INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
+                    VALUES (
+                        '{$tableName}',
+                        OLD.{$primaryKey},
+                        'UPDATE',
+                        JSON_OBJECT('oldValue', OLD.{$field}, 'newValue', NEW.{$field}),
+                        CONCAT('Изменение в таблице {$tableName}. Поле: {$field}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$field})
+                    );
+                END IF;
+            END IF;
+
+            -- Логирование для INSERT и DELETE
+            IF '{$operation}' IN ('INSERT', 'DELETE') THEN
+                INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
+                VALUES ('{$tableName}', IFNULL(NEW.{$primaryKey}, OLD.{$primaryKey}), '{$operation}', '{}', logMessage);
+            END IF;
+        END;
+    ";
+
+        $data = print_r($field,true);
+        try {
+            $stmt = $database->prepare($sqlCreate);
+            $stmt->execute();
+            echo "[Migrations] Триггер для таблицы {$tableName}[$data]: успешно создан.\n";
+            file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Триггер для таблицы {$tableName}[$data]: успешно создан.\n", FILE_APPEND);
+        } catch (\Exception $e) {
+            file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Ошибка создания триггера для таблицы {$tableName}[$data]: {$e->getMessage()}\n", FILE_APPEND);
+            echo "[Migrations] Ошибка создания триггера для таблицы {$tableName}[$data]: {$e->getMessage()}\n";
         }
     }
 
@@ -588,56 +549,6 @@ final class Installer
         } catch (\PDOException $e) {
             echo "[Error] Не удалось подключиться к базе данных: " . $e->getMessage() . "\n";
             return null;
-        }
-    }
-
-    /**
-     * Ru: Выполнение необходимых триггеров поотдельности, чтобы база данных не умерла
-     * [1] - Соединение с базой данных
-     * [2] - SQL запрос на выполнение
-     * [3] - Название таблицы
-     * [4] - Каталог журнала
-     * [5] - Текущая дата (d-m-Y)
-     * [6] - Текущее время (H:i:s)
-     * [7] - Ключ поле / столбца
-     *
-     * En: Performing the necessary separation triggers so that the database does not die
-     * [1] - Database connection
-     * [2] - SQL execution request
-     * [3] - Name of the table
-     * [4] - Magazine catalog
-     * [5] - Current date (d-m-Y)
-     * [6] - Current time (H:i:s)
-     * [7] - Key field / column
-     *
-     * @param \PDO|null   $database  - [1]
-     * @param string      $sql       - [2]
-     * @param string|null $tableName - [3]
-     * @param string|null $logDir    - [4]
-     * @param string|null $date      - [5]
-     * @param string|null $now       - [6]
-     * @param string|null $key       - [7]
-     * @return void
-     */
-    private static function executeTrigger(
-        ?\PDO $database,
-        string $sql,
-        ?string $tableName,
-        ?string $logDir,
-        ?string $date,
-        ?string $now,
-        ?string $key
-    ): void {
-
-        $data = print_r($key,true);
-        try {
-            $stmt = $database->prepare($sql);
-            $stmt->execute();
-            echo "[Migrations] Триггер для таблицы {$tableName}[$data]: успешно создан.\n";
-            file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Триггер для таблицы {$tableName}[$data]: успешно создан.\n", FILE_APPEND);
-        } catch (\Exception $e) {
-            file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Ошибка создания триггера для таблицы {$tableName}[$data]: {$e->getMessage()}\n", FILE_APPEND);
-            echo "[Migrations] Ошибка создания триггера для таблицы {$tableName} key: $data: {$e->getMessage()}\n";
         }
     }
 
