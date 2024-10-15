@@ -498,17 +498,26 @@ final class Installer
         // INSERT INTO триггер
         $insertTriggerName = "before_{$tableName}_insert_{$field}";
         $insertLog = self::PREFIX_INSERT_INTO_DESCRIPTION[$logicalTableName] ?? '';
-        self::createTrigger($database, $billing, $insertTriggerName, $tableName, 'INSERT', $field, $primaryKey, $insertLog, $logDir, $date, $now);
+        self::createTrigger(
+            $database, $billing, $insertTriggerName, $tableName, 'INSERT',
+            $field, $primaryKey, $insertLog, $logDir, $date, $now
+        );
 
         // DELETE триггер
         $deleteTriggerName = "before_{$tableName}_delete_{$field}";
         $deleteLog = self::PREFIX_DELETE_DESCRIPTION[$logicalTableName] ?? '';
-        self::createTrigger($database, $billing, $deleteTriggerName, $tableName, 'DELETE', $field, $primaryKey, $deleteLog, $logDir, $date, $now);
+        self::createTrigger(
+            $database, $billing, $deleteTriggerName, $tableName, 'DELETE',
+            $field, $primaryKey, $deleteLog, $logDir, $date, $now
+        );
 
         // UPDATE триггер (уже был реализован)
         $updateTriggerName = "before_{$tableName}_update_{$field}";
         $updateLog = "Изменение в таблице {$tableName} [trigger: {$updateTriggerName}]. Поле: {$field}. Время: {$now}";
-        self::createTrigger($database, $billing, $updateTriggerName, $tableName, 'UPDATE', $field, $primaryKey, $updateLog, $logDir, $date, $now);
+        self::createTrigger(
+            $database, $billing, $updateTriggerName, $tableName, 'UPDATE',
+            $field, $primaryKey, $updateLog, $logDir, $date, $now
+        );
     }
 
     private static function createTrigger(
@@ -522,7 +531,7 @@ final class Installer
         string $logTemplate,
         string $logDir,
         string $date,
-        string $now,
+        string $now
     ): void {
         // Удаление существующего триггера
         $sqlDrop = "DROP TRIGGER IF EXISTS {$triggerName}";
@@ -530,44 +539,67 @@ final class Installer
 
         // Логика создания триггера
         $sqlCreate = "
-        CREATE TRIGGER {$triggerName} BEFORE {$operation} ON {$tableName}
-        FOR EACH ROW
-        BEGIN
-            DECLARE logMessage TEXT;
+    CREATE TRIGGER {$triggerName} BEFORE {$operation} ON {$tableName}
+    FOR EACH ROW
+    BEGIN
+        DECLARE logMessage TEXT;
 
-            IF '{$operation}' = 'INSERT' THEN
-                SET logMessage = REPLACE(REPLACE('{$logTemplate}', '#%userId%', NEW.{$primaryKey}), '%date%', NOW());
-            ELSEIF '{$operation}' = 'DELETE' THEN
-                SET logMessage = REPLACE(REPLACE('{$logTemplate}', '#%userId%', OLD.{$primaryKey}), '%date%', NOW());
-            ELSE
-                IF OLD.{$field} != NEW.{$field} THEN
-                    INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-                    VALUES (
-                        '{$tableName}',
-                        OLD.{$primaryKey},
-                        'UPDATE',
-                        JSON_OBJECT('oldValue', OLD.{$field}, 'newValue', NEW.{$field}),
-                        CONCAT('Изменение в таблице {$tableName}. Поле: {$field}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$field})
-                    );
-                END IF;
-            END IF;
+        IF '{$operation}' = 'INSERT' THEN
+            SET logMessage = REPLACE(
+                REPLACE('{$logTemplate}', '#%userId%', NEW.{$primaryKey}),
+                '%date%', NOW()
+            );
 
-            -- Логирование для INSERT и DELETE
-            IF '{$operation}' IN ('INSERT', 'DELETE') THEN
+        ELSIF '{$operation}' = 'DELETE' THEN
+            SET logMessage = REPLACE(
+                REPLACE('{$logTemplate}', '#%userId%', OLD.{$primaryKey}),
+                '%date%', NOW()
+            );
+
+        ELSE -- Обработка UPDATE
+            IF OLD.{$field} != NEW.{$field} THEN
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-                VALUES ('{$tableName}', IFNULL(NEW.{$primaryKey}, OLD.{$primaryKey}), '{$operation}', '{}', logMessage);
+                VALUES (
+                    '{$tableName}',
+                    OLD.{$primaryKey},
+                    'UPDATE',
+                    JSON_OBJECT('oldValue', OLD.{$field}, 'newValue', NEW.{$field}),
+                    CONCAT('Изменение в таблице {$tableName}. Поле: {$field}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$field})
+                );
             END IF;
-        END;
+        END IF;
+
+        -- Логирование для INSERT и DELETE
+        IF '{$operation}' IN ('INSERT', 'DELETE') THEN
+            INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
+            VALUES (
+                '{$tableName}', 
+                IFNULL(NEW.{$primaryKey}, OLD.{$primaryKey}), 
+                '{$operation}', 
+                '{}', 
+                logMessage
+            );
+        END IF;
+    END;
     ";
 
-        $data = print_r($field,true);
+        // Выполнение SQL создания триггера
+        $data = print_r($field, true);
         try {
             $stmt = $database->prepare($sqlCreate);
             $stmt->execute();
             echo "[Migrations] Триггер для таблицы {$tableName}[$data][$operation]: успешно создан.\n";
-            file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Триггер для таблицы {$tableName}[$data][$operation]: успешно создан.\n", FILE_APPEND);
+            file_put_contents(
+                $logDir . "/triggers-{$date}.log",
+                "[$now] [Migrations] Триггер для таблицы {$tableName}[$data][$operation]: успешно создан.\n",
+                FILE_APPEND
+            );
         } catch (\Exception $e) {
-            file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Ошибка создания триггера для таблицы {$tableName}[$data][$operation]: {$e->getMessage()}\n", FILE_APPEND);
+            file_put_contents(
+                $logDir . "/triggers-{$date}.log",
+                "[$now] [Migrations] Ошибка создания триггера для таблицы {$tableName}[$data][$operation]: {$e->getMessage()}\n",
+                FILE_APPEND
+            );
             echo "[Migrations] Ошибка создания триггера для таблицы {$tableName}[$data][$operation]: {$e->getMessage()}\n";
         }
     }
