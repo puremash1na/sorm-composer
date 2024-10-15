@@ -266,10 +266,10 @@ final class Installer
     public static function installTriggers(): void
     {
         $database = Sorm::initDatabase();
-
+        $settings = Sorm::loadSettings();
         // Получаем ассоциации из настроек
-        $associationsDb = self::$settings['associationsDb'];
-        $associationsKeys = self::$settings['associationsKeys'];
+        $associationsDb   = $settings['associationsDb'];
+        $associationsKeys = $settings['associationsKeys'];
 
         $logDir = self::getLogDir();
 
