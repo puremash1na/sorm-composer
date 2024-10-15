@@ -39,14 +39,18 @@ if (php_sapi_name() === 'cli') {
                 SormModule\Installer::deleteTriggers();
                 sleep(5);
             default:
-                echo "Неизвестная команда: {$command}. Доступные команды: start, cron.\n";
+                echo "Неизвестная команда: {$command}. Формат: php sorm/index.php команда\n";
+                echo "Доступные команды:\n";
+                foreach (CLI_ALLOWED_COMMANDS as $command => $desc) {
+                    echo "php sorm/index.php $command --- $desc\n";
+                }
                 break;
         }
     } else {
         echo "Недостаточно аргументов. Формат: php sorm/index.php команда\n";
         echo "Доступные команды:\n";
-        foreach (CLI_ALLOWED_COMMANDS as $desc => $command) {
-            echo "php sorm/index.php $command: $desc\n";
+        foreach (CLI_ALLOWED_COMMANDS as $command => $desc) {
+            echo "php sorm/index.php $command --- $desc\n";
         }
     }
 } else {
