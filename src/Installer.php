@@ -346,8 +346,8 @@ final class Installer
                         $sqlDropUpdate = "DROP TRIGGER IF EXISTS {$triggerNameUpdate}";
                         $database->exec($sqlDrop);
                         $database->exec($sqlDropUpdate);
-                        echo "[Migrations] Триггер для таблицы {$tableName} key: $subKey успешно удален.\n";
-                        file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Триггер для таблицы {$tableName} key: $subKey успешно создан.\n", FILE_APPEND);
+                        echo "[Migrations] Триггер для таблицы {$tableName}[$subKey]: успешно удален.\n";
+                        file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Триггер для таблицы {$tableName}[$subKey]: успешно удален.\n", FILE_APPEND);
                     }
                 } else {
                     if($value === null || $value === '') {
@@ -361,8 +361,8 @@ final class Installer
                     $sqlDropUpdate = "DROP TRIGGER IF EXISTS {$triggerNameUpdate}";
                     $database->exec($sqlDrop);
                     $database->exec($sqlDropUpdate);
-                    echo "[Migrations] Триггер для таблицы {$tableName} key: $value успешно удален.\n";
-                    file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Триггер для таблицы {$tableName} key: $value успешно создан.\n", FILE_APPEND);
+                    echo "[Migrations] Триггер для таблицы {$tableName}[$value]: успешно удален.\n";
+                    file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Триггер для таблицы {$tableName}[$value]: успешно удален.\n", FILE_APPEND);
 
                 }
             }
@@ -453,7 +453,7 @@ final class Installer
                                         'oldValue', OLD.{$subKey},
                                         'newValue', NEW.{$subKey}
                                     ), 
-                                    CONCAT('Изменение в таблице {$tableName} {$triggerName}. Поле: {$subKey}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$subKey})
+                                    CONCAT('Изменение в таблице {$tableName} [trigger: {$triggerName}]. Поле: {$subKey}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$subKey})
                                 );
                             END IF;
 
@@ -469,7 +469,7 @@ final class Installer
                                         'oldValue', OLD.{$subKey},
                                         'newValue', NEW.{$subKey}
                                     ), 
-                                    CONCAT('Изменение в таблице {$tableName} {$triggerName}. Поле: {$subKey}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$subKey})
+                                    CONCAT('Изменение в таблице {$tableName} [trigger: {$triggerName}]. Поле: {$subKey}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$subKey})
                                 );
                             END IF;
 
@@ -484,7 +484,7 @@ final class Installer
                                     'oldValue', OLD.{$subKey},
                                     'newValue', NEW.{$subKey}
                                 ), 
-                                CONCAT('Изменение в таблице {$tableName} {$triggerName}. Поле: {$subKey}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$subKey})
+                                CONCAT('Изменение в таблице {$tableName} [trigger: {$triggerName}]. Поле: {$subKey}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$subKey})
                             );
                         END IF;
                     END;
@@ -530,7 +530,7 @@ final class Installer
                                         'oldValue', OLD.{$value},
                                         'newValue', NEW.{$value}
                                     ), 
-                                    CONCAT('Изменение в таблице {$tableName} {$triggerName}. Поле: {$value}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$value})
+                                    CONCAT('Изменение в таблице {$tableName} [trigger: {$triggerName}]. Поле: {$value}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$value})
                                 );
                             END IF;
 
@@ -546,7 +546,7 @@ final class Installer
                                         'oldValue', OLD.{$value},
                                         'newValue', NEW.{$value}
                                     ), 
-                                    CONCAT('Изменение в таблице {$tableName} {$triggerName}. Поле: {$value}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$value})
+                                    CONCAT('Изменение в таблице {$tableName} [trigger: {$triggerName}]. Поле: {$value}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$value})
                                 );
                             END IF;
 
@@ -561,7 +561,7 @@ final class Installer
                                     'oldValue', OLD.{$value},
                                     'newValue', NEW.{$value}
                                 ), 
-                                CONCAT('Изменение в таблице {$tableName} {$triggerName}. Поле: {$value}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$value})
+                                CONCAT('Изменение в таблице {$tableName} [trigger: {$triggerName}]. Поле: {$value}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$value})
                             );
                         END IF;
                     END;
@@ -633,10 +633,10 @@ final class Installer
         try {
             $stmt = $database->prepare($sql);
             $stmt->execute();
-            echo "[Migrations] Триггер для таблицы {$tableName} key: $data успешно создан.\n";
-            file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Триггер для таблицы {$tableName} key: $data успешно создан.\n", FILE_APPEND);
+            echo "[Migrations] Триггер для таблицы {$tableName}[$data]: успешно создан.\n";
+            file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Триггер для таблицы {$tableName}[$data]: успешно создан.\n", FILE_APPEND);
         } catch (\Exception $e) {
-            file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Ошибка создания триггера для таблицы {$tableName} key: $data: {$e->getMessage()}\n", FILE_APPEND);
+            file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Ошибка создания триггера для таблицы {$tableName}[$data]: {$e->getMessage()}\n", FILE_APPEND);
             echo "[Migrations] Ошибка создания триггера для таблицы {$tableName} key: $data: {$e->getMessage()}\n";
         }
     }
