@@ -3,6 +3,12 @@
 require __DIR__ . '/../vendor/autoload.php';
 
 if (php_sapi_name() === 'cli') {
+    define("CLI_ALLOWED_COMMANDS", [
+        "update"         => "Запуск первичной выгрузки на СОРМ",
+        "cron"           => "Запуск выгрузка данных на СОРМ, CRON",
+        "install"        => "Запуск миграции logs_edit и триггеров для отслеживания изменении в БД",
+        "deleteTriggers" => "Удаление триггеров из базы данных",
+    ]);
     $argv = $_SERVER['argv'];
 
     if (isset($argv[1])) {
@@ -28,15 +34,20 @@ if (php_sapi_name() === 'cli') {
                 SormModule\Installer::installMigrations();
                 SormModule\Installer::installTriggers();
                 break;
+            case 'deleteTriggers':
+                echo "Удаление триггеров из базы данных:";
+                SormModule\Installer::deleteTriggers();
+                sleep(5);
             default:
                 echo "Неизвестная команда: {$command}. Доступные команды: start, cron.\n";
                 break;
         }
     } else {
-        echo "Недостаточно аргументов. Формат: php index.php команда действие\n";
+        echo "Недостаточно аргументов. Формат: php sorm/index.php команда\n";
         echo "Доступные команды:\n";
-        echo "start: Первичная выгрузка на СОРМ\n";
-        echo "cron: Выгрузка данных на СОРМ, CRON\n";
+        foreach (CLI_ALLOWED_COMMANDS as $desc => $command) {
+            echo "php sorm/index.php $command: $desc\n";
+        }
     }
 } else {
     echo "Этот скрипт можно запускать только из CLI.\n";
