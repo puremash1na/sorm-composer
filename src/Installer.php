@@ -282,7 +282,6 @@ final class Installer
         $now = date('H:i:s');
 
         foreach ($associationsDb as $logicalTableName => $actualTableName) {
-            // Получаем реальные ключи для этой таблицы
             $keys = $associationsKeys[$logicalTableName] ?? null;
 
             // Пропускаем таблицы без ключей
@@ -290,6 +289,8 @@ final class Installer
                 file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Пропущена таблица {$actualTableName}, отсутствуют ключи.\n", FILE_APPEND);
                 continue;
             }
+
+            $primaryKey = $keys['login'] ?? $keys['number'] ?? 'id';
 
             // Проходим по каждому ключу таблицы
             foreach ($keys as $key => $value) {
@@ -305,7 +306,7 @@ final class Installer
                         INSERT INTO logs_edit (tableName, recordId, action, data, comment)
                         VALUES (
                             '{$actualTableName}', 
-                            OLD.{$subKey},  -- Используем реальное поле для идентификатора
+                            OLD.{$primaryKey},  -- Используем реальное поле для идентификатора (primary key)
                             'UPDATE', 
                             JSON_OBJECT(
                                 'old', OLD.{$subKey},
@@ -333,7 +334,7 @@ final class Installer
                     INSERT INTO logs_edit (tableName, recordId, action, data, comment)
                     VALUES (
                         '{$actualTableName}', 
-                        OLD.{$value},  -- Используем реальное поле для идентификатора
+                        OLD.{$primaryKey},  -- Используем реальное поле для идентификатора (primary key)
                         'UPDATE', 
                         JSON_OBJECT(
                             'old', OLD.{$value},
@@ -366,6 +367,4 @@ final class Installer
             echo "[Migrations] Ошибка создания триггера для таблицы {$actualTableName}: {$e->getMessage()}\n";
         }
     }
-
-
 }
