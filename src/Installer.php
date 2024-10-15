@@ -267,13 +267,10 @@ final class Installer
     {
         $database = Sorm::initDatabase();
         $settings = Sorm::loadSettings();
-        // Получаем ассоциации из настроек
         $associationsDb   = $settings['associationsDb'];
         $associationsKeys = $settings['associationsKeys'];
 
         $logDir = self::getLogDir();
-
-        // Проверка и создание директории для логов
         if (!is_dir($logDir)) {
             mkdir($logDir, 0777, true);
         }
@@ -284,21 +281,22 @@ final class Installer
         foreach ($associationsDb as $logicalTableName => $actualTableName) {
             $keys = $associationsKeys[$logicalTableName] ?? null;
 
-            // Пропускаем таблицы без ключей
             if (!$keys) {
-                file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Пропущена таблица {$actualTableName}, отсутствуют ключи.\n", FILE_APPEND);
                 continue;
             }
 
             $primaryKey = $keys['login'] ?? $keys['number'] ?? 'id';
 
-            // Проходим по каждому ключу таблицы
             foreach ($keys as $key => $value) {
-                // Если значение ключа - массив, создаем триггер для каждого элемента массива
                 if (is_array($value)) {
                     foreach ($value as $subKey) {
                         $triggerName = "before_{$actualTableName}_update_{$subKey}";
-                        $sql = "
+
+                        // Удаляем существующий триггер, если он уже есть
+                        $sqlDrop = "DROP TRIGGER IF EXISTS {$triggerName}";
+                        $database->exec($sqlDrop);
+
+                        $sqlCreate = "
                     CREATE TRIGGER {$triggerName}
                     BEFORE UPDATE ON {$actualTableName}
                     FOR EACH ROW
@@ -306,27 +304,26 @@ final class Installer
                         INSERT INTO logs_edit (tableName, recordId, action, data, comment)
                         VALUES (
                             '{$actualTableName}', 
-                            OLD.{$primaryKey},  -- Используем реальное поле для идентификатора (primary key)
+                            OLD.{$primaryKey},
                             'UPDATE', 
                             JSON_OBJECT(
                                 'old', OLD.{$subKey},
                                 'new', NEW.{$subKey}
                             ), 
-                            CONCAT(
-                                'Изменение в таблице {$actualTableName}. Поле: {$subKey}. Время: ', 
-                                NOW(), 
-                                '. Предыдущее значение: ', 
-                                OLD.{$subKey}
-                            )
+                            CONCAT('Изменение в таблице {$actualTableName}. Поле: {$subKey}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$subKey})
                         );
                     END;
                     ";
-                        self::executeTrigger($database, $sql, $actualTableName, $logDir, $date, $now);
+                        self::executeTrigger($database, $sqlCreate, $actualTableName, $logDir, $date, $now);
                     }
                 } else {
-                    // Если значение не массив, создаем триггер для обычного ключа
                     $triggerName = "before_{$actualTableName}_update_{$value}";
-                    $sql = "
+
+                    // Удаляем существующий триггер, если он уже есть
+                    $sqlDrop = "DROP TRIGGER IF EXISTS {$triggerName}";
+                    $database->exec($sqlDrop);
+
+                    $sqlCreate = "
                 CREATE TRIGGER {$triggerName}
                 BEFORE UPDATE ON {$actualTableName}
                 FOR EACH ROW
@@ -334,26 +331,22 @@ final class Installer
                     INSERT INTO logs_edit (tableName, recordId, action, data, comment)
                     VALUES (
                         '{$actualTableName}', 
-                        OLD.{$primaryKey},  -- Используем реальное поле для идентификатора (primary key)
+                        OLD.{$primaryKey},
                         'UPDATE', 
                         JSON_OBJECT(
                             'old', OLD.{$value},
                             'new', NEW.{$value}
                         ), 
-                        CONCAT(
-                            'Изменение в таблице {$actualTableName}. Поле: {$value}. Время: ', 
-                            NOW(), 
-                            '. Предыдущее значение: ', 
-                            OLD.{$value}
-                        )
+                        CONCAT('Изменение в таблице {$actualTableName}. Поле: {$value}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$value})
                     );
                 END;
                 ";
-                    self::executeTrigger($database, $sql, $actualTableName, $logDir, $date, $now);
+                    self::executeTrigger($database, $sqlCreate, $actualTableName, $logDir, $date, $now);
                 }
             }
         }
     }
+
 
     private static function executeTrigger($database, $sql, $actualTableName, $logDir, $date, $now): void
     {
