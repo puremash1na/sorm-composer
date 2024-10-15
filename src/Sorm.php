@@ -50,6 +50,7 @@ final class Sorm
      */
     public static function initDatabase(): ?PDO
     {
+        self::loadSettings();
         try {
             $dsn = sprintf(
                 'mysql:host=%s;port=%s;charset=utf8',
