@@ -301,17 +301,19 @@ final class Installer
                     BEFORE UPDATE ON {$actualTableName}
                     FOR EACH ROW
                     BEGIN
-                        INSERT INTO logs_edit (tableName, recordId, action, data, comment)
-                        VALUES (
-                            '{$actualTableName}', 
-                            OLD.{$primaryKey},
-                            'UPDATE', 
-                            JSON_OBJECT(
-                                'old', OLD.{$subKey},
-                                'new', NEW.{$subKey}
-                            ), 
-                            CONCAT('Изменение в таблице {$actualTableName}. Поле: {$subKey}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$subKey})
-                        );
+                        IF OLD.{$subKey} IS NOT NULL AND NEW.{$subKey} IS NOT NULL AND OLD.{$subKey} != NEW.{$subKey} THEN
+                            INSERT INTO logs_edit (tableName, recordId, action, data, comment)
+                            VALUES (
+                                '{$actualTableName}', 
+                                OLD.{$primaryKey},
+                                'UPDATE', 
+                                JSON_OBJECT(
+                                    'old', OLD.{$subKey},
+                                    'new', NEW.{$subKey}
+                                ), 
+                                CONCAT('Изменение в таблице {$actualTableName}. Поле: {$subKey}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$subKey})
+                            );
+                        END IF;
                     END;
                     ";
                         self::executeTrigger($database, $sqlCreate, $actualTableName, $logDir, $date, $now);
@@ -328,17 +330,19 @@ final class Installer
                 BEFORE UPDATE ON {$actualTableName}
                 FOR EACH ROW
                 BEGIN
-                    INSERT INTO logs_edit (tableName, recordId, action, data, comment)
-                    VALUES (
-                        '{$actualTableName}', 
-                        OLD.{$primaryKey},
-                        'UPDATE', 
-                        JSON_OBJECT(
-                            'old', OLD.{$value},
-                            'new', NEW.{$value}
-                        ), 
-                        CONCAT('Изменение в таблице {$actualTableName}. Поле: {$value}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$value})
-                    );
+                    IF OLD.{$value} IS NOT NULL AND NEW.{$value} IS NOT NULL AND OLD.{$value} != NEW.{$value} THEN
+                        INSERT INTO logs_edit (tableName, recordId, action, data, comment)
+                        VALUES (
+                            '{$actualTableName}', 
+                            OLD.{$primaryKey},
+                            'UPDATE', 
+                            JSON_OBJECT(
+                                'old', OLD.{$value},
+                                'new', NEW.{$value}
+                            ), 
+                            CONCAT('Изменение в таблице {$actualTableName}. Поле: {$value}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$value})
+                        );
+                    END IF;
                 END;
                 ";
                     self::executeTrigger($database, $sqlCreate, $actualTableName, $logDir, $date, $now);
@@ -346,7 +350,6 @@ final class Installer
             }
         }
     }
-
 
     private static function executeTrigger($database, $sql, $actualTableName, $logDir, $date, $now): void
     {
