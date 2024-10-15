@@ -476,7 +476,7 @@ final class Installer
                         self::installTriggerForKey($database, $billing, $tableName, $logicalTableName, $primaryKey, $subKey, $logDir, $date, $now);
                     }
                 } else {
-                    if($subKey === null || $subKey === '') {
+                    if($value === null || $value === '') {
                         continue;
                     }
                     self::installTriggerForKey($database, $billing, $tableName, $logicalTableName, $primaryKey, $value, $logDir, $date, $now);
