@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 15.10.2024, 22:21
+ * Updated At: 15.10.2024, 22:25
  *
  */
 
@@ -561,7 +561,7 @@ final class Installer
             FOR EACH ROW
             BEGIN
                 DECLARE logMessage TEXT;
-                SET logMessage = 'Inserted new Data to {$tableName}';
+                SET logMessage = 'Inserted new Data to {$tableName} {$logTemplate}';
 
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
@@ -583,7 +583,7 @@ final class Installer
             FOR EACH ROW
             BEGIN
                 DECLARE logMessage TEXT;
-                SET logMessage = 'Deleted old data from {$tableName}';
+                SET logMessage = 'Deleted old data from {$tableName} {$logTemplate}';
 
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
@@ -692,44 +692,7 @@ final class Installer
 
     private static function replaceMulti(string $template): string
     {
-        $settings         = Sorm::loadSettings();
-        $associationsDb   = $settings['associationsDb'];
-        $associationsKeys = $settings['associationsKeys'];
 
-        // Начальная строка для замены шаблонов
-        $replaceSql = "'{$template}'";
-
-        // Перебираем все базы данных из конфигурации
-        foreach ($associationsDb as $logicalTableName => $dbConfig) {
-            $keys = $associationsKeys[$logicalTableName] ?? null;
-            if (!$keys) {
-                echo "[Error] Ключи для таблицы {$logicalTableName} не найдены.\n";
-                continue;
-            }
-
-            // Перебираем ключи и добавляем вложенные замены
-            foreach ($keys as $key => $value) {
-                if (is_array($value)) {
-                    foreach ($value as $subKey) {
-                        if ($subKey !== null && $subKey !== '') {
-                            // Вложенная замена
-                            $replaceSql = "REPLACE({$replaceSql}, '#%{$subKey}%', NEW.{$subKey})";
-                        }
-                    }
-                } else {
-                    if ($value !== null && $value !== '') {
-                        // Вложенная замена
-                        $replaceSql = "REPLACE({$replaceSql}, '#%{$key}%', NEW.{$value})";
-                    }
-                }
-            }
-        }
-
-        // Добавляем замену для %datePrefix%
-        $replaceSql = "REPLACE({$replaceSql}, '%datePrefix%', NOW())";
-
-        // Возвращаем строку с вложенными REPLACE
-        return $replaceSql;
     }
 
     /**
