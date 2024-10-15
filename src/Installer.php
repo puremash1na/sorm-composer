@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 15.10.2024, 22:04
+ * Updated At: 15.10.2024, 22:14
  *
  */
 
@@ -474,13 +474,13 @@ final class Installer
                         if($subKey === null || $subKey === '') {
                             continue;
                         }
-                        self::installTriggerForKey($database, $billing, $tableName, $logicalTableName, $primaryKey, $subKey, $logDir, $date, $now);
+                        self::installTriggerForKey($database, $billing, $tableName, $logicalTableName, $primaryKey,$keys, $subKey, $logDir, $date, $now);
                     }
                 } else {
                     if($value === null || $value === '') {
                         continue;
                     }
-                    self::installTriggerForKey($database, $billing, $tableName, $logicalTableName, $primaryKey, $value, $logDir, $date, $now);
+                    self::installTriggerForKey($database, $billing, $tableName, $logicalTableName, $primaryKey, $keys, $value, $logDir, $date, $now);
                 }
             }
         }
@@ -492,6 +492,7 @@ final class Installer
         string $tableName,
         string $logicalTableName,
         string $primaryKey,
+        array $fields,
         string $field,
         string $logDir,
         string $date,
@@ -503,18 +504,18 @@ final class Installer
         }
 
         // INSERT INTO триггер
-        $insertTriggerName = "before_{$tableName}_insert_{$field}";
+        $insertTriggerName = "before_{$tableName}_insert";
         $insertLog = self::PREFIX_INSERT_INTO_DESCRIPTION[$logicalTableName] ?? '';
         self::createTrigger(
-            $database, $billing, $insertTriggerName, $tableName, 'INSERT',
+            $database, $billing, $insertTriggerName, $tableName, 'INSERT',$fields,
             $field, $primaryKey, $insertLog, $logDir, $date, $now
         );
 
         // DELETE триггер
-        $deleteTriggerName = "before_{$tableName}_delete_{$field}";
+        $deleteTriggerName = "before_{$tableName}_delete";
         $deleteLog = self::PREFIX_DELETE_DESCRIPTION[$logicalTableName] ?? '';
         self::createTrigger(
-            $database, $billing, $deleteTriggerName, $tableName, 'DELETE',
+            $database, $billing, $deleteTriggerName, $tableName, 'DELETE',$fields,
             $field, $primaryKey, $deleteLog, $logDir, $date, $now
         );
 
@@ -522,7 +523,7 @@ final class Installer
         $updateTriggerName = "before_{$tableName}_update_{$field}";
         $updateLog = "Изменение в таблице {$tableName} [trigger: {$updateTriggerName}]. Поле: {$field}. Время: {$now}";
         self::createTrigger(
-            $database, $billing, $updateTriggerName, $tableName, 'UPDATE',
+            $database, $billing, $updateTriggerName, $tableName, 'UPDATE',$fields,
             $field, $primaryKey, $updateLog, $logDir, $date, $now
         );
     }
@@ -536,6 +537,7 @@ final class Installer
         string $triggerName,
         string $tableName,
         string $operation,
+        array $fields,
         string $field,
         string $primaryKey,
         string $logTemplate,
@@ -552,20 +554,21 @@ final class Installer
 
         switch (strtoupper($operation)) {
             case 'INSERT':
+                $jsonDataInfo = "JSON_OBJECT(" . implode(", ", array_map(fn($field) => "'{$field}', NEW.{$field}", $fields)) . ")";
+
                 $sqlCreate = "
             CREATE TRIGGER {$triggerName} BEFORE INSERT ON {$tableName}
             FOR EACH ROW
             BEGIN
                 DECLARE logMessage TEXT;
-                DECLARE dataInfo JSON;
                 SET logMessage = 'Inserted new Data';
-                SET dataInfo = JSON_OBJECT('oldValue', NEW.{$field});
+
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
                     '{$tableName}',
                     '0',
                     'INSERT',
-                    dataInfo,
+                    {$jsonDataInfo},
                     logMessage
                 );
             END;
@@ -573,21 +576,21 @@ final class Installer
                 break;
 
             case 'DELETE':
+                $jsonDataInfo = "JSON_OBJECT(" . implode(", ", array_map(fn($field) => "'{$field}', OLD.{$field}", $fields)) . ")";
+
                 $sqlCreate = "
             CREATE TRIGGER {$triggerName} BEFORE DELETE ON {$tableName}
             FOR EACH ROW
             BEGIN
                 DECLARE logMessage TEXT;
-                DECLARE dataInfo JSON;
                 SET logMessage = 'Deleted old data';
-                SET dataInfo = JSON_OBJECT('oldValue', OLD.{$field});
-                
+
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
                     '{$tableName}',
                     '0',
                     'DELETE',
-                    dataInfo,
+                    {$jsonDataInfo},
                     logMessage
                 );
             END;
