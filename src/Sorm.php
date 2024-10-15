@@ -36,7 +36,7 @@ final class Sorm
      */
     public static function loadSettings(): mixed
     {
-        self::$settings = Sorm::loadSettings();
+        self::$path = Sorm::findProjectRoot();
         $settingsFilePath = self::$path . '/sorm/settings.yaml'; // Используем путь до корня проекта
         self::$settings = Yaml::parseFile($settingsFilePath);
         return self::$settings;
@@ -129,7 +129,7 @@ final class Sorm
      * Поиск корневой директории проекта
      * @throws Exception
      */
-    public static function findProjectRoot(): void
+    public static function findProjectRoot(): ?string
     {
         $dir = getcwd();
 
@@ -140,6 +140,7 @@ final class Sorm
         // Сохраняем путь к корню проекта в свойстве path
         if (file_exists($dir . '/.env')) {
             self::$path = $dir;
+            return self::$path;
         } else {
             throw new Exception('Project root (.env) not found.');
         }
