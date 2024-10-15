@@ -266,59 +266,106 @@ final class Installer
     public static function installTriggers(): void
     {
         $database = Sorm::initDatabase();
-        $settings = Sorm::loadSettings();
 
         // Получаем ассоциации из настроек
-        $associationsDb   = $settings['associationsDb'];
-        $associationsKeys = $settings['associationsKeys'];
+        $associationsDb = self::$settings['associationsDb'];
+        $associationsKeys = self::$settings['associationsKeys'];
 
         $logDir = self::getLogDir();
+
+        // Проверка и создание директории для логов
+        if (!is_dir($logDir)) {
+            mkdir($logDir, 0777, true);
+        }
+
         $date = date('d-m-Y');
         $now = date('H:i:s');
 
         foreach ($associationsDb as $logicalTableName => $actualTableName) {
+            // Получаем реальные ключи для этой таблицы
             $keys = $associationsKeys[$logicalTableName] ?? null;
 
+            // Пропускаем таблицы без ключей
             if (!$keys) {
+                file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Пропущена таблица {$actualTableName}, отсутствуют ключи.\n", FILE_APPEND);
                 continue;
             }
 
-            $triggerName = "before_{$actualTableName}_update";
-
-            $sql = "
-        CREATE TRIGGER {$triggerName}
-        BEFORE UPDATE ON {$actualTableName}
-        FOR EACH ROW
-        BEGIN
-            INSERT INTO logs_edit (tableName, recordId, action, data, comment)
-            VALUES (
-                '{$actualTableName}', 
-                OLD.{$keys['number']},  -- Используем реальное поле для идентификатора
-                'UPDATE', 
-                JSON_OBJECT(
-                    'old', OLD.{$keys['data']},
-                    'new', NEW.{$keys['data']}
-                ), 
-                CONCAT(
-                    'Изменение в таблице {$actualTableName}. Время: ', 
-                    NOW(), 
-                    '. Предыдущее значение: ', 
-                    OLD.{$keys['data']}
-                )
-            );
-        END;
-        ";
-
-            try {
-                $stmt = $database->prepare($sql);
-                $stmt->execute();
-                echo "[Migrations] Триггер для таблицы {$actualTableName} успешно создан.\n";
-                file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Триггер для таблицы {$actualTableName} успешно создан.\n", FILE_APPEND);
-            } catch (\Exception $e) {
-                file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Ошибка создания триггера для таблицы {$actualTableName}: {$e->getMessage()}\n", FILE_APPEND);
-                echo "[Migrations] Ошибка создания триггера для таблицы {$actualTableName}: {$e->getMessage()}\n";
+            // Проходим по каждому ключу таблицы
+            foreach ($keys as $key => $value) {
+                // Если значение ключа - массив, создаем триггер для каждого элемента массива
+                if (is_array($value)) {
+                    foreach ($value as $subKey) {
+                        $triggerName = "before_{$actualTableName}_update_{$subKey}";
+                        $sql = "
+                    CREATE TRIGGER {$triggerName}
+                    BEFORE UPDATE ON {$actualTableName}
+                    FOR EACH ROW
+                    BEGIN
+                        INSERT INTO logs_edit (tableName, recordId, action, data, comment)
+                        VALUES (
+                            '{$actualTableName}', 
+                            OLD.{$subKey},  -- Используем реальное поле для идентификатора
+                            'UPDATE', 
+                            JSON_OBJECT(
+                                'old', OLD.{$subKey},
+                                'new', NEW.{$subKey}
+                            ), 
+                            CONCAT(
+                                'Изменение в таблице {$actualTableName}. Поле: {$subKey}. Время: ', 
+                                NOW(), 
+                                '. Предыдущее значение: ', 
+                                OLD.{$subKey}
+                            )
+                        );
+                    END;
+                    ";
+                        self::executeTrigger($database, $sql, $actualTableName, $logDir, $date, $now);
+                    }
+                } else {
+                    // Если значение не массив, создаем триггер для обычного ключа
+                    $triggerName = "before_{$actualTableName}_update_{$value}";
+                    $sql = "
+                CREATE TRIGGER {$triggerName}
+                BEFORE UPDATE ON {$actualTableName}
+                FOR EACH ROW
+                BEGIN
+                    INSERT INTO logs_edit (tableName, recordId, action, data, comment)
+                    VALUES (
+                        '{$actualTableName}', 
+                        OLD.{$value},  -- Используем реальное поле для идентификатора
+                        'UPDATE', 
+                        JSON_OBJECT(
+                            'old', OLD.{$value},
+                            'new', NEW.{$value}
+                        ), 
+                        CONCAT(
+                            'Изменение в таблице {$actualTableName}. Поле: {$value}. Время: ', 
+                            NOW(), 
+                            '. Предыдущее значение: ', 
+                            OLD.{$value}
+                        )
+                    );
+                END;
+                ";
+                    self::executeTrigger($database, $sql, $actualTableName, $logDir, $date, $now);
+                }
             }
         }
     }
+
+    private static function executeTrigger($database, $sql, $actualTableName, $logDir, $date, $now): void
+    {
+        try {
+            $stmt = $database->prepare($sql);
+            $stmt->execute();
+            echo "[Migrations] Триггер для таблицы {$actualTableName} успешно создан.\n";
+            file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Триггер для таблицы {$actualTableName} успешно создан.\n", FILE_APPEND);
+        } catch (\Exception $e) {
+            file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Ошибка создания триггера для таблицы {$actualTableName}: {$e->getMessage()}\n", FILE_APPEND);
+            echo "[Migrations] Ошибка создания триггера для таблицы {$actualTableName}: {$e->getMessage()}\n";
+        }
+    }
+
 
 }
