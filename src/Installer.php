@@ -526,6 +526,9 @@ final class Installer
         );
     }
 
+    /**
+     * @throws \Exception
+     */
     private static function createTrigger(
         ?\PDO $database,
         string $billing,
@@ -543,64 +546,121 @@ final class Installer
         $sqlDrop = "DROP TRIGGER IF EXISTS {$triggerName}";
         $database->exec($sqlDrop);
 
-        // Создание SQL для триггера
-        $sqlCreate = "
-    CREATE TRIGGER {$triggerName} BEFORE {$operation} ON {$tableName}
-    FOR EACH ROW
-    BEGIN
-        DECLARE logMessage TEXT;
-        DECLARE oldData TEXT;
-        DECLARE newData TEXT;
+        // Подготовка SQL для различных операций
+        $sqlCreate = "";
 
-        -- Генерация сообщения для INSERT
-        IF '{$operation}' = 'INSERT' THEN
-            SET logMessage = " . self::replaceMulti($logTemplate) . ";
-            INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-            VALUES (
-                '{$tableName}',
-                NEW.{$primaryKey},
-                'INSERT',
-                '{}',
-                logMessage
-            );
+        switch (strtoupper($operation)) {
+            case 'INSERT':
+                $sqlCreate = "
+            CREATE TRIGGER {$triggerName} BEFORE INSERT ON {$tableName}
+            FOR EACH ROW
+            BEGIN
+                DECLARE logMessage TEXT;
+                SET logMessage = " . self::replaceMulti($logTemplate) . ";
+                INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
+                VALUES (
+                    '{$tableName}',
+                    NEW.{$primaryKey},
+                    'INSERT',
+                    '{}',
+                    logMessage
+                );
+            END;
+            ";
+                break;
 
-        -- Генерация сообщения для DELETE
-        ELSIF '{$operation}' = 'DELETE' THEN
-            SET logMessage = " . self::replaceMulti($logTemplate) . ";
-            INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-            VALUES (
-                '{$tableName}',
-                OLD.{$primaryKey},
-                'DELETE',
-                '{}',
-                logMessage
-            );
-
-        -- Обработка UPDATE
-        ELSE
-            -- Если значение изменилось
-            IF OLD.{$field} != NEW.{$field} THEN
-                -- Обработка данных для JSON и сериализованных данных
-                IF (JSON_VALID(OLD.{$field}) AND JSON_VALID(NEW.{$field})) THEN
-                    SET oldData = OLD.{$field};
-                    SET newData = NEW.{$field};
-                ELSE
-                    SET oldData = CAST(OLD.{$field} AS CHAR);
-                    SET newData = CAST(NEW.{$field} AS CHAR);
-                END IF;
-
+            case 'DELETE':
+                $sqlCreate = "
+            CREATE TRIGGER {$triggerName} BEFORE DELETE ON {$tableName}
+            FOR EACH ROW
+            BEGIN
+                DECLARE logMessage TEXT;
+                SET logMessage = " . self::replaceMulti($logTemplate) . ";
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
                     '{$tableName}',
                     OLD.{$primaryKey},
-                    'UPDATE',
-                    JSON_OBJECT('oldValue', oldData, 'newValue', newData),
-                    CONCAT('Изменение в таблице {$tableName}. Поле: {$field}. Время: ', NOW(), '. Предыдущее значение: ', oldData)
+                    'DELETE',
+                    '{}',
+                    logMessage
                 );
-            END IF;
-        END IF;
-    END;
-    ";
+            END;
+            ";
+                break;
+
+            case 'UPDATE':
+                $sqlCreate = "
+            CREATE TRIGGER {$triggerName} BEFORE UPDATE ON {$tableName}
+            FOR EACH ROW
+            BEGIN
+                DECLARE logMessage TEXT;
+
+                IF ((OLD.{$field} IS NOT NULL AND OLD.{$field} != '') OR (NEW.{$field} IS NOT NULL AND NEW.{$field} != '')) AND OLD.{$field} != NEW.{$field} THEN
+                    DECLARE isOldSerialized BOOL;
+                    DECLARE isNewSerialized BOOL;
+                    DECLARE isOldJson BOOL;
+                    DECLARE isNewJson BOOL;
+
+                    -- Проверяем, являются ли старые и новые данные сериализованными или JSON
+                    SET isOldSerialized = (OLD.{$field} IS NOT NULL AND LEFT(OLD.{$field}, 2) = 'a:');
+                    SET isNewSerialized = (NEW.{$field} IS NOT NULL AND LEFT(NEW.{$field}, 2) = 'a:');
+                    SET isOldJson = (OLD.{$field} IS NOT NULL AND LEFT(OLD.{$field}, 1) = '{');
+                    SET isNewJson = (NEW.{$field} IS NOT NULL AND LEFT(NEW.{$field}, 1) = '{');
+
+                    -- Если оба значения сериализованы, сравниваем как массивы
+                    IF isOldSerialized AND isNewSerialized THEN
+                        IF (OLD.{$field} != NEW.{$field}) THEN
+                            INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
+                            VALUES (
+                                '{$tableName}', 
+                                OLD.{$primaryKey},
+                                'UPDATE', 
+                                JSON_OBJECT(
+                                    'oldValue', OLD.{$field},
+                                    'newValue', NEW.{$field}
+                                ), 
+                                CONCAT('Изменение в таблице {$tableName}. Поле: {$field}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$field})
+                            );
+                        END IF;
+
+                    -- Если оба значения JSON, сравниваем как массивы
+                    ELSEIF isOldJson AND isNewJson THEN
+                        IF (JSON_UNQUOTE(JSON_EXTRACT(OLD.{$field}, '$')) != JSON_UNQUOTE(JSON_EXTRACT(NEW.{$field}, '$'))) THEN
+                            INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
+                            VALUES (
+                                '{$tableName}', 
+                                OLD.{$primaryKey},
+                                'UPDATE', 
+                                JSON_OBJECT(
+                                    'oldValue', OLD.{$field},
+                                    'newValue', NEW.{$field}
+                                ), 
+                                CONCAT('Изменение в таблице {$tableName}. Поле: {$field}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$field})
+                            );
+                        END IF;
+
+                    -- Если не сериализованные и не JSON данные, проверяем как обычные строки
+                    ELSEIF (OLD.{$field} != NEW.{$field}) AND (OLD.{$field} IS NOT NULL AND OLD.{$field} != '') AND (NEW.{$field} IS NOT NULL AND NEW.{$field} != '') THEN
+                        INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
+                        VALUES (
+                            '{$tableName}', 
+                            OLD.{$primaryKey},
+                            'UPDATE', 
+                            JSON_OBJECT(
+                                'oldValue', OLD.{$field},
+                                'newValue', NEW.{$field}
+                            ), 
+                            CONCAT('Изменение в таблице {$tableName}. Поле: {$field}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$field})
+                        );
+                    END IF;
+                END IF;
+            END;
+            ";
+                break;
+
+            default:
+                throw new \Exception("Неизвестная операция: {$operation}");
+        }
 
         try {
             $stmt = $database->prepare($sqlCreate);
