@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 15.10.2024, 22:25
+ * Updated At: 15.10.2024, 22:37
  *
  */
 
@@ -538,7 +538,7 @@ final class Installer
         string $tableName,
         string $operation,
         array $fields,
-        string $field,
+        string $fieldString,
         string $primaryKey,
         string $logTemplate,
         string $logDir,
@@ -604,62 +604,62 @@ final class Installer
             BEGIN
                 DECLARE logMessage TEXT;
 
-                IF ((OLD.{$field} IS NOT NULL AND OLD.{$field} != '') OR (NEW.{$field} IS NOT NULL AND NEW.{$field} != '')) AND OLD.{$field} != NEW.{$field} THEN
+                IF ((OLD.{$fieldString} IS NOT NULL AND OLD.{$fieldString} != '') OR (NEW.{$fieldString} IS NOT NULL AND NEW.{$fieldString} != '')) AND OLD.{$fieldString} != NEW.{$fieldString} THEN
                     DECLARE isOldSerialized BOOL;
                     DECLARE isNewSerialized BOOL;
                     DECLARE isOldJson BOOL;
                     DECLARE isNewJson BOOL;
 
                     -- Проверяем, являются ли старые и новые данные сериализованными или JSON
-                    SET isOldSerialized = (OLD.{$field} IS NOT NULL AND LEFT(OLD.{$field}, 2) = 'a:');
-                    SET isNewSerialized = (NEW.{$field} IS NOT NULL AND LEFT(NEW.{$field}, 2) = 'a:');
-                    SET isOldJson = (OLD.{$field} IS NOT NULL AND LEFT(OLD.{$field}, 1) = '{');
-                    SET isNewJson = (NEW.{$field} IS NOT NULL AND LEFT(NEW.{$field}, 1) = '{');
+                    SET isOldSerialized = (OLD.{$fieldString} IS NOT NULL AND LEFT(OLD.{$fieldString}, 2) = 'a:');
+                    SET isNewSerialized = (NEW.{$fieldString} IS NOT NULL AND LEFT(NEW.{$fieldString}, 2) = 'a:');
+                    SET isOldJson = (OLD.{$fieldString} IS NOT NULL AND LEFT(OLD.{$fieldString}, 1) = '{');
+                    SET isNewJson = (NEW.{$fieldString} IS NOT NULL AND LEFT(NEW.{$fieldString}, 1) = '{');
 
                     -- Если оба значения сериализованы, сравниваем как массивы
                     IF isOldSerialized AND isNewSerialized THEN
-                        IF (OLD.{$field} != NEW.{$field}) THEN
+                        IF (OLD.{$fieldString} != NEW.{$fieldString}) THEN
                             INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                             VALUES (
                                 '{$tableName}', 
                                 OLD.{$primaryKey},
                                 'UPDATE', 
                                 JSON_OBJECT(
-                                    'oldValue', OLD.{$field},
-                                    'newValue', NEW.{$field}
+                                    'oldValue', OLD.{$fieldString},
+                                    'newValue', NEW.{$fieldString}
                                 ), 
-                                CONCAT('Изменение в таблице {$tableName}. Поле: {$field}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$field})
+                                CONCAT('Изменение в таблице {$tableName}. Поле: {$fieldString}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$fieldString})
                             );
                         END IF;
 
                     -- Если оба значения JSON, сравниваем как массивы
                     ELSEIF isOldJson AND isNewJson THEN
-                        IF (JSON_UNQUOTE(JSON_EXTRACT(OLD.{$field}, '$')) != JSON_UNQUOTE(JSON_EXTRACT(NEW.{$field}, '$'))) THEN
+                        IF (JSON_UNQUOTE(JSON_EXTRACT(OLD.{$fieldString}, '$')) != JSON_UNQUOTE(JSON_EXTRACT(NEW.{$fieldString}, '$'))) THEN
                             INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                             VALUES (
                                 '{$tableName}', 
                                 OLD.{$primaryKey},
                                 'UPDATE', 
                                 JSON_OBJECT(
-                                    'oldValue', OLD.{$field},
-                                    'newValue', NEW.{$field}
+                                    'oldValue', OLD.{$fieldString},
+                                    'newValue', NEW.{$fieldString}
                                 ), 
-                                CONCAT('Изменение в таблице {$tableName}. Поле: {$field}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$field})
+                                CONCAT('Изменение в таблице {$tableName}. Поле: {$fieldString}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$fieldString})
                             );
                         END IF;
 
                     -- Если не сериализованные и не JSON данные, проверяем как обычные строки
-                    ELSEIF (OLD.{$field} != NEW.{$field}) AND (OLD.{$field} IS NOT NULL AND OLD.{$field} != '') AND (NEW.{$field} IS NOT NULL AND NEW.{$field} != '') THEN
+                    ELSEIF (OLD.{$fieldString} != NEW.{$fieldString}) AND (OLD.{$fieldString} IS NOT NULL AND OLD.{$fieldString} != '') AND (NEW.{$fieldString} IS NOT NULL AND NEW.{$fieldString} != '') THEN
                         INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                         VALUES (
                             '{$tableName}', 
                             OLD.{$primaryKey},
                             'UPDATE', 
                             JSON_OBJECT(
-                                'oldValue', OLD.{$field},
-                                'newValue', NEW.{$field}
+                                'oldValue', OLD.{$fieldString},
+                                'newValue', NEW.{$fieldString}
                             ), 
-                            CONCAT('Изменение в таблице {$tableName}. Поле: {$field}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$field})
+                            CONCAT('Изменение в таблице {$tableName}. Поле: {$fieldString}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$fieldString})
                         );
                     END IF;
                 END IF;
@@ -674,19 +674,19 @@ final class Installer
         try {
             $stmt = $database->prepare($sqlCreate);
             $stmt->execute();
-            echo "[Migrations] Триггер для таблицы {$tableName}[$field][$operation]: успешно создан.\n";
+            echo "[Migrations] Триггер для таблицы {$tableName}[$fieldString][$operation]: успешно создан.\n";
             file_put_contents(
                 "{$logDir}/triggers-{$date}.log",
-                "[$now] [Migrations] Триггер для таблицы {$tableName}[$field][$operation]: успешно создан.\n",
+                "[$now] [Migrations] Триггер для таблицы {$tableName}[$fieldString][$operation]: успешно создан.\n",
                 FILE_APPEND
             );
         } catch (\Exception $e) {
             file_put_contents(
                 "{$logDir}/triggers-{$date}.log",
-                "[$now] [Migrations] Ошибка создания триггера для таблицы {$tableName}[$field][$operation] [$triggerName]: {$e->getMessage()}\n",
+                "[$now] [Migrations] Ошибка создания триггера для таблицы {$tableName}[$fieldString][$operation] [$triggerName]: {$e->getMessage()}\n",
                 FILE_APPEND
             );
-            echo "[Migrations] Ошибка создания триггера для таблицы {$tableName}[$field][$operation] [$triggerName]: {$e->getMessage()}\n";
+            echo "[Migrations] Ошибка создания триггера для таблицы {$tableName}[$fieldString][$operation] [$triggerName]: {$e->getMessage()}\n";
         }
     }
 
