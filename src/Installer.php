@@ -314,7 +314,7 @@ final class Installer
                     BEFORE UPDATE ON {$tableName}
                     FOR EACH ROW
                     BEGIN
-                        IF OLD.{$subKey} IS NOT NULL AND NEW.{$subKey} IS NOT NULL AND OLD.{$subKey} != NEW.{$subKey} THEN
+                        IF (OLD.{$subKey} IS NOT NULL AND NEW.{$subKey} IS NOT NULL) OR (OLD.{$subKey} != NEW.{$subKey}) THEN
                             INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                             VALUES (
                                 '{$tableName}', 
@@ -347,7 +347,7 @@ final class Installer
                 BEFORE UPDATE ON {$tableName}
                 FOR EACH ROW
                 BEGIN
-                    IF OLD.{$value} IS NOT NULL AND NEW.{$value} IS NOT NULL AND OLD.{$value} != NEW.{$value} THEN
+                    IF (OLD.{$value} IS NOT NULL AND NEW.{$value} IS NOT NULL) OR (OLD.{$value} != NEW.{$value}) THEN
                         INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                         VALUES (
                             '{$tableName}', 
