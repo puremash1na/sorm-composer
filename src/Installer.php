@@ -525,11 +525,11 @@ final class Installer
         try {
             $stmt = $database->prepare($sqlCreate);
             $stmt->execute();
-            echo "[Migrations] Триггер для таблицы {$tableName}[$data]: успешно создан.\n";
-            file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Триггер для таблицы {$tableName}[$data]: успешно создан.\n", FILE_APPEND);
+            echo "[Migrations] Триггер для таблицы {$tableName}[$data][$operation]: успешно создан.\n";
+            file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Триггер для таблицы {$tableName}[$data][$operation]: успешно создан.\n", FILE_APPEND);
         } catch (\Exception $e) {
-            file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Ошибка создания триггера для таблицы {$tableName}[$data]: {$e->getMessage()}\n", FILE_APPEND);
-            echo "[Migrations] Ошибка создания триггера для таблицы {$tableName}[$data]: {$e->getMessage()}\n";
+            file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Ошибка создания триггера для таблицы {$tableName}[$data][$operation]: {$e->getMessage()}\n", FILE_APPEND);
+            echo "[Migrations] Ошибка создания триггера для таблицы {$tableName}[$data][$operation]: {$e->getMessage()}\n";
         }
     }
 
