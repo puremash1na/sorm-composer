@@ -23,6 +23,8 @@ if (php_sapi_name() === 'cli') {
                 break;
             case 'install':
                 echo "Запуск миграции logs_edit и триггеров для отслеживания изменении в БД:";
+                SormModule\Installer::deleteTriggers();
+                sleep(5);
                 SormModule\Installer::installMigrations();
                 SormModule\Installer::installTriggers();
                 break;

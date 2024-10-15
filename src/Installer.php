@@ -259,7 +259,71 @@ final class Installer
         }
     }
 
+    public static function deleteTriggers(): void
+    {
+        $settings         = Sorm::loadSettings();
+        $associationsDb   = $settings['associationsDb'];
+        $associationsKeys = $settings['associationsKeys'];
 
+        $logDir = self::getLogDir();
+        if (!is_dir($logDir)) {
+            mkdir($logDir, 0777, true);
+        }
+
+        $date = date('d-m-Y');
+        $now = date('H:i:s');
+
+        foreach ($associationsDb as $logicalTableName => $dbConfig) {
+            $dbType = key($dbConfig);
+            $tableName = $dbConfig[$dbType];
+
+            // Получаем соответствующие креды для базы данных
+            $dbCreds = $settings[$dbType] ?? null;
+            if (!$dbCreds) {
+                echo "[Error] Креды для базы данных {$dbType} не найдены.\n";
+                continue;
+            }
+
+            // Инициализация соединения с базой данных
+            $database = self::initDatabaseConnection($dbCreds);
+
+            $keys = $associationsKeys[$logicalTableName] ?? null;
+            if (!$keys) {
+                continue;
+            }
+
+            $primaryKey = $keys['login'] ?? $keys['number'] ?? 'id';
+
+            foreach ($keys as $key => $value) {
+                if (is_array($value)) {
+                    foreach ($value as $subKey) {
+                        if ($subKey === null || $subKey === '') {
+                            continue;
+                        }
+                        $triggerName = "before_{$tableName}_update_{$subKey}";
+
+                        // Удаляем существующий триггер, если он уже есть
+                        $sqlDrop = "DROP TRIGGER IF EXISTS {$triggerName}";
+                        $database->exec($sqlDrop);
+                        echo "[Migrations] Триггер для таблицы {$tableName} key: $subKey успешно удален.\n";
+                        file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Триггер для таблицы {$tableName} key: $subKey успешно создан.\n", FILE_APPEND);
+                    }
+                } else {
+                    if($value === null || $value === '') {
+                        continue;
+                    }
+                    $triggerName = "before_{$tableName}_update_{$value}";
+
+                    // Удаляем существующий триггер, если он уже есть
+                    $sqlDrop = "DROP TRIGGER IF EXISTS {$triggerName}";
+                    $database->exec($sqlDrop);
+                    echo "[Migrations] Триггер для таблицы {$tableName} key: $value успешно удален.\n";
+                    file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Триггер для таблицы {$tableName} key: $value успешно создан.\n", FILE_APPEND);
+
+                }
+            }
+        }
+    }
     public static function installTriggers(): void
     {
         $settings = Sorm::loadSettings();
@@ -337,7 +401,7 @@ final class Installer
                                         'oldValue', OLD.{$subKey},
                                         'newValue', NEW.{$subKey}
                                     ), 
-                                    CONCAT('Изменение в таблице {$tableName}. Поле: {$subKey}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$subKey})
+                                    CONCAT('Изменение в таблице {$tableName} {$triggerName}. Поле: {$subKey}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$subKey})
                                 );
                             END IF;
 
@@ -353,7 +417,7 @@ final class Installer
                                         'oldValue', OLD.{$subKey},
                                         'newValue', NEW.{$subKey}
                                     ), 
-                                    CONCAT('Изменение в таблице {$tableName}. Поле: {$subKey}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$subKey})
+                                    CONCAT('Изменение в таблице {$tableName} {$triggerName}. Поле: {$subKey}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$subKey})
                                 );
                             END IF;
 
@@ -368,7 +432,7 @@ final class Installer
                                     'oldValue', OLD.{$subKey},
                                     'newValue', NEW.{$subKey}
                                 ), 
-                                CONCAT('Изменение в таблице {$tableName}. Поле: {$subKey}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$subKey})
+                                CONCAT('Изменение в таблице {$tableName} {$triggerName}. Поле: {$subKey}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$subKey})
                             );
                         END IF;
                     END;
@@ -414,7 +478,7 @@ final class Installer
                                         'oldValue', OLD.{$value},
                                         'newValue', NEW.{$value}
                                     ), 
-                                    CONCAT('Изменение в таблице {$tableName}. Поле: {$value}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$value})
+                                    CONCAT('Изменение в таблице {$tableName} {$triggerName}. Поле: {$value}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$value})
                                 );
                             END IF;
 
@@ -430,7 +494,7 @@ final class Installer
                                         'oldValue', OLD.{$value},
                                         'newValue', NEW.{$value}
                                     ), 
-                                    CONCAT('Изменение в таблице {$tableName}. Поле: {$value}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$value})
+                                    CONCAT('Изменение в таблице {$tableName} {$triggerName}. Поле: {$value}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$value})
                                 );
                             END IF;
 
@@ -445,7 +509,7 @@ final class Installer
                                     'oldValue', OLD.{$value},
                                     'newValue', NEW.{$value}
                                 ), 
-                                CONCAT('Изменение в таблице {$tableName}. Поле: {$value}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$value})
+                                CONCAT('Изменение в таблице {$tableName} {$triggerName}. Поле: {$value}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$value})
                             );
                         END IF;
                     END;
