@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 15.10.2024, 22:14
+ * Updated At: 15.10.2024, 22:21
  *
  */
 
@@ -561,7 +561,7 @@ final class Installer
             FOR EACH ROW
             BEGIN
                 DECLARE logMessage TEXT;
-                SET logMessage = 'Inserted new Data';
+                SET logMessage = 'Inserted new Data to {$tableName}';
 
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
@@ -583,7 +583,7 @@ final class Installer
             FOR EACH ROW
             BEGIN
                 DECLARE logMessage TEXT;
-                SET logMessage = 'Deleted old data';
+                SET logMessage = 'Deleted old data from {$tableName}';
 
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
