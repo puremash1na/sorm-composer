@@ -265,6 +265,7 @@ final class Installer
         $settings = Sorm::loadSettings();
         $associationsDb = $settings['associationsDb'];
         $associationsKeys = $settings['associationsKeys'];
+        $billing = $settings['database']['name'];
 
         $logDir = self::getLogDir();
         if (!is_dir($logDir)) {
@@ -314,7 +315,7 @@ final class Installer
                     FOR EACH ROW
                     BEGIN
                         IF OLD.{$subKey} IS NOT NULL AND NEW.{$subKey} IS NOT NULL AND OLD.{$subKey} != NEW.{$subKey} THEN
-                            INSERT INTO logs_edit (tableName, recordId, action, data, comment)
+                            INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                             VALUES (
                                 '{$tableName}', 
                                 OLD.{$primaryKey},
@@ -347,7 +348,7 @@ final class Installer
                 FOR EACH ROW
                 BEGIN
                     IF OLD.{$value} IS NOT NULL AND NEW.{$value} IS NOT NULL AND OLD.{$value} != NEW.{$value} THEN
-                        INSERT INTO logs_edit (tableName, recordId, action, data, comment)
+                        INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                         VALUES (
                             '{$tableName}', 
                             OLD.{$primaryKey},
