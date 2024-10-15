@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 15.10.2024, 22:37
+ * Updated At: 15.10.2024, 23:03
  *
  */
 
@@ -554,7 +554,13 @@ final class Installer
 
         switch (strtoupper($operation)) {
             case 'INSERT':
-                $jsonDataInfo = "JSON_OBJECT(" . implode(", ", array_map(fn($field) => "'{$field}', NEW.{$field}", $fields)) . ")";
+                $jsonDataInfo = "JSON_OBJECT(" . implode(", ", array_map(function($field) {
+                        return "'{$field}', CASE
+                    WHEN LEFT(NEW.`{$field}`, 2) = 'a:' THEN JSON_ARRAYAGG(UNCOMPRESS(NEW.`{$field}`))
+                    WHEN LEFT(NEW.`{$field}`, 1) = '{' THEN JSON_UNQUOTE(NEW.`{$field}`)
+                    ELSE NEW.`{$field}`
+                END";
+                    }, $fields)) . ")";
 
                 $sqlCreate = "
             CREATE TRIGGER {$triggerName} BEFORE INSERT ON {$tableName}
@@ -576,7 +582,13 @@ final class Installer
                 break;
 
             case 'DELETE':
-                $jsonDataInfo = "JSON_OBJECT(" . implode(", ", array_map(fn($field) => "'{$field}', OLD.{$field}", $fields)) . ")";
+                $jsonDataInfo = "JSON_OBJECT(" . implode(", ", array_map(function($field) {
+                        return "'{$field}', CASE
+                    WHEN LEFT(OLD.`{$field}`, 2) = 'a:' THEN JSON_ARRAYAGG(UNCOMPRESS(OLD.`{$field}`))
+                    WHEN LEFT(OLD.`{$field}`, 1) = '{' THEN JSON_UNQUOTE(OLD.`{$field}`)
+                    ELSE OLD.`{$field}`
+                END";
+                    }, $fields)) . ")";
 
                 $sqlCreate = "
             CREATE TRIGGER {$triggerName} BEFORE DELETE ON {$tableName}
