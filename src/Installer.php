@@ -314,22 +314,66 @@ final class Installer
                     BEFORE UPDATE ON {$tableName}
                     FOR EACH ROW
                     BEGIN
-                    IF ((OLD.{$subKey} IS NOT NULL AND OLD.{$subKey} != '') OR (NEW.{$subKey} IS NOT NULL AND NEW.{$subKey} != '')) AND OLD.{$subKey} != NEW.{$subKey} THEN
+                        DECLARE isOldSerialized BOOL;
+                        DECLARE isNewSerialized BOOL;
+                        DECLARE isOldJson BOOL;
+                        DECLARE isNewJson BOOL;
+                        
+                        -- Проверяем, являются ли старые и новые данные сериализованными или JSON
+                        SET isOldSerialized = (OLD.{$subKey} IS NOT NULL AND LEFT(OLD.{$subKey}, 2) = 'a:');
+                        SET isNewSerialized = (NEW.{$subKey} IS NOT NULL AND LEFT(NEW.{$subKey}, 2) = 'a:');
+                        SET isOldJson = (OLD.{$subKey} IS NOT NULL AND LEFT(OLD.{$subKey}, 1) = '{');
+                        SET isNewJson = (NEW.{$subKey} IS NOT NULL AND LEFT(NEW.{$subKey}, 1) = '{');
+
+                        -- Если оба значения сериализованы, сравниваем как массивы
+                        IF isOldSerialized AND isNewSerialized THEN
+                            IF (OLD.{$subKey} != NEW.{$subKey}) THEN
+                                INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
+                                VALUES (
+                                    '{$tableName}', 
+                                    OLD.{$primaryKey},
+                                    'UPDATE', 
+                                    JSON_OBJECT(
+                                        'oldValue', OLD.{$subKey},
+                                        'newValue', NEW.{$subKey}
+                                    ), 
+                                    CONCAT('Изменение в таблице {$tableName}. Поле: {$subKey}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$subKey})
+                                );
+                            END IF;
+
+                        -- Если оба значения JSON, сравниваем как массивы
+                        ELSEIF isOldJson AND isNewJson THEN
+                            IF (JSON_UNQUOTE(JSON_EXTRACT(OLD.{$subKey}, '$')) != JSON_UNQUOTE(JSON_EXTRACT(NEW.{$subKey}, '$'))) THEN
+                                INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
+                                VALUES (
+                                    '{$tableName}', 
+                                    OLD.{$primaryKey},
+                                    'UPDATE', 
+                                    JSON_OBJECT(
+                                        'oldValue', OLD.{$subKey},
+                                        'newValue', NEW.{$subKey}
+                                    ), 
+                                    CONCAT('Изменение в таблице {$tableName}. Поле: {$subKey}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$subKey})
+                                );
+                            END IF;
+
+                        -- Если не сериализованные и не JSON данные, проверяем как обычные строки
+                        ELSEIF (OLD.{$subKey} != NEW.{$subKey}) AND (OLD.{$subKey} IS NOT NULL AND OLD.{$subKey} != '') AND (NEW.{$subKey} IS NOT NULL AND NEW.{$subKey} != '') THEN
                             INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                             VALUES (
                                 '{$tableName}', 
                                 OLD.{$primaryKey},
                                 'UPDATE', 
                                 JSON_OBJECT(
-                                    'old', OLD.{$subKey},
-                                    'new', NEW.{$subKey}
+                                    'oldValue', OLD.{$subKey},
+                                    'newValue', NEW.{$subKey}
                                 ), 
                                 CONCAT('Изменение в таблице {$tableName}. Поле: {$subKey}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$subKey})
                             );
                         END IF;
                     END;
                     ";
-                        self::executeTrigger($database, $sqlCreate, $tableName, $logDir, $date, $now,$subKey);
+                        self::executeTrigger($database, $sqlCreate, $tableName, $logDir, $date, $now, $subKey);
                     }
                 } else {
                     if($value === null || $value === '') {
@@ -343,26 +387,70 @@ final class Installer
 
                     // Создаём новый триггер с проверками на пустые данные и изменение данных
                     $sqlCreate = "
-                CREATE TRIGGER {$triggerName}
-                BEFORE UPDATE ON {$tableName}
-                FOR EACH ROW
-                BEGIN
-                    IF ((OLD.{$value} IS NOT NULL AND OLD.{$value} != '') OR (NEW.{$value} IS NOT NULL AND NEW.{$value} != '')) AND OLD.{$value} != NEW.{$value} THEN
-                        INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-                        VALUES (
-                            '{$tableName}', 
-                            OLD.{$primaryKey},
-                            'UPDATE', 
-                            JSON_OBJECT(
-                                'old', OLD.{$value},
-                                'new', NEW.{$value}
-                            ), 
-                            CONCAT('Изменение в таблице {$tableName}. Поле: {$value}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$value})
-                        );
-                    END IF;
-                END;
-                ";
-                    self::executeTrigger($database, $sqlCreate, $tableName, $logDir, $date, $now,$value);
+                    CREATE TRIGGER {$triggerName}
+                    BEFORE UPDATE ON {$tableName}
+                    FOR EACH ROW
+                    BEGIN
+                        DECLARE isOldSerialized BOOL;
+                        DECLARE isNewSerialized BOOL;
+                        DECLARE isOldJson BOOL;
+                        DECLARE isNewJson BOOL;
+                        
+                        -- Проверяем, являются ли старые и новые данные сериализованными или JSON
+                        SET isOldSerialized = (OLD.{$value} IS NOT NULL AND LEFT(OLD.{$value}, 2) = 'a:');
+                        SET isNewSerialized = (NEW.{$value} IS NOT NULL AND LEFT(NEW.{$value}, 2) = 'a:');
+                        SET isOldJson = (OLD.{$value} IS NOT NULL AND LEFT(OLD.{$value}, 1) = '{');
+                        SET isNewJson = (NEW.{$value} IS NOT NULL AND LEFT(NEW.{$value}, 1) = '{');
+
+                        -- Если оба значения сериализованы, сравниваем как массивы
+                        IF isOldSerialized AND isNewSerialized THEN
+                            IF (OLD.{$value} != NEW.{$value}) THEN
+                                INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
+                                VALUES (
+                                    '{$tableName}', 
+                                    OLD.{$primaryKey},
+                                    'UPDATE', 
+                                    JSON_OBJECT(
+                                        'oldValue', OLD.{$value},
+                                        'newValue', NEW.{$value}
+                                    ), 
+                                    CONCAT('Изменение в таблице {$tableName}. Поле: {$value}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$value})
+                                );
+                            END IF;
+
+                        -- Если оба значения JSON, сравниваем как массивы
+                        ELSEIF isOldJson AND isNewJson THEN
+                            IF (JSON_UNQUOTE(JSON_EXTRACT(OLD.{$value}, '$')) != JSON_UNQUOTE(JSON_EXTRACT(NEW.{$value}, '$'))) THEN
+                                INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
+                                VALUES (
+                                    '{$tableName}', 
+                                    OLD.{$primaryKey},
+                                    'UPDATE', 
+                                    JSON_OBJECT(
+                                        'oldValue', OLD.{$value},
+                                        'newValue', NEW.{$value}
+                                    ), 
+                                    CONCAT('Изменение в таблице {$tableName}. Поле: {$value}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$value})
+                                );
+                            END IF;
+
+                        -- Если не сериализованные и не JSON данные, проверяем как обычные строки
+                        ELSEIF (OLD.{$value} != NEW.{$value}) AND (OLD.{$value} IS NOT NULL AND OLD.{$value} != '') AND (NEW.{$value} IS NOT NULL AND NEW.{$value} != '') THEN
+                            INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
+                            VALUES (
+                                '{$tableName}', 
+                                OLD.{$primaryKey},
+                                'UPDATE', 
+                                JSON_OBJECT(
+                                    'oldValue', OLD.{$value},
+                                    'newValue', NEW.{$value}
+                                ), 
+                                CONCAT('Изменение в таблице {$tableName}. Поле: {$value}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$value})
+                            );
+                        END IF;
+                    END;
+                    ";
+                    self::executeTrigger($database, $sqlCreate, $tableName, $logDir, $date, $now, $value);
                 }
             }
         }
