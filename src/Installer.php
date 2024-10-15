@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 15.10.2024, 21:52
+ * Updated At: 15.10.2024, 21:57
  *
  */
 
@@ -558,12 +558,13 @@ final class Installer
             BEGIN
                 DECLARE logMessage TEXT;
                 SET logMessage = 'Inserted new Data';
+                SET data = JSON_OBJECT( 'oldData', OLD );
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
                     '{$tableName}',
                     '0',
                     'INSERT',
-                    '{}',
+                    data,
                     logMessage
                 );
             END;
@@ -577,12 +578,14 @@ final class Installer
             BEGIN
                 DECLARE logMessage TEXT;
                 SET logMessage = 'Deleted old data';
+                SET data = JSON_OBJECT( 'newData', NEW );
+                
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
                     '{$tableName}',
                     '0',
                     'DELETE',
-                    '{}',
+                    data,
                     logMessage
                 );
             END;
