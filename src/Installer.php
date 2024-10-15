@@ -549,35 +549,55 @@ final class Installer
     FOR EACH ROW
     BEGIN
         DECLARE logMessage TEXT;
+        DECLARE oldData TEXT;
+        DECLARE newData TEXT;
 
-        -- Генерация сообщения для INSERT и DELETE
+        -- Генерация сообщения для INSERT
         IF '{$operation}' = 'INSERT' THEN
             SET logMessage = " . self::replaceMulti($logTemplate) . ";
+            INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
+            VALUES (
+                '{$tableName}',
+                NEW.{$primaryKey},
+                'INSERT',
+                '{}',
+                logMessage
+            );
+
+        -- Генерация сообщения для DELETE
         ELSIF '{$operation}' = 'DELETE' THEN
             SET logMessage = " . self::replaceMulti($logTemplate) . ";
-        ELSE -- Обработка UPDATE
+            INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
+            VALUES (
+                '{$tableName}',
+                OLD.{$primaryKey},
+                'DELETE',
+                '{}',
+                logMessage
+            );
+
+        -- Обработка UPDATE
+        ELSE
+            -- Если значение изменилось
             IF OLD.{$field} != NEW.{$field} THEN
+                -- Обработка данных для JSON и сериализованных данных
+                IF (JSON_VALID(OLD.{$field}) AND JSON_VALID(NEW.{$field})) THEN
+                    SET oldData = OLD.{$field};
+                    SET newData = NEW.{$field};
+                ELSE
+                    SET oldData = CAST(OLD.{$field} AS CHAR);
+                    SET newData = CAST(NEW.{$field} AS CHAR);
+                END IF;
+
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
                     '{$tableName}',
                     OLD.{$primaryKey},
                     'UPDATE',
-                    JSON_OBJECT('oldValue', OLD.{$field}, 'newValue', NEW.{$field}),
-                    CONCAT('Изменение в таблице {$tableName}. Поле: {$field}. Время: ', NOW(), '. Предыдущее значение: ', OLD.{$field})
+                    JSON_OBJECT('oldValue', oldData, 'newValue', newData),
+                    CONCAT('Изменение в таблице {$tableName}. Поле: {$field}. Время: ', NOW(), '. Предыдущее значение: ', oldData)
                 );
             END IF;
-        END IF;
-
-        -- Логирование для INSERT и DELETE
-        IF '{$operation}' IN ('INSERT', 'DELETE') THEN
-            INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-            VALUES (
-                '{$tableName}',
-                IFNULL(NEW.{$primaryKey}, OLD.{$primaryKey}),
-                '{$operation}',
-                '{}',
-                logMessage
-            );
         END IF;
     END;
     ";
