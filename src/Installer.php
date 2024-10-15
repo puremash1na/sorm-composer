@@ -556,7 +556,7 @@ final class Installer
             FOR EACH ROW
             BEGIN
                 DECLARE logMessage TEXT;
-                SET logMessage = " . self::replaceMulti($logTemplate) . ";
+                SET logMessage = `Inserted new Data`;
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
                     '{$tableName}',
@@ -575,7 +575,7 @@ final class Installer
             FOR EACH ROW
             BEGIN
                 DECLARE logMessage TEXT;
-                SET logMessage = " . self::replaceMulti($logTemplate) . ";
+                SET logMessage = `Deleted old data`;
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
                     '{$tableName}',
