@@ -560,7 +560,7 @@ final class Installer
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
                     '{$tableName}',
-                    NEW.{$primaryKey},
+                    NEW.{$field},
                     'INSERT',
                     '{}',
                     logMessage
@@ -579,7 +579,7 @@ final class Installer
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
                     '{$tableName}',
-                    OLD.{$primaryKey},
+                    OLD.{$field},
                     'DELETE',
                     '{}',
                     logMessage
