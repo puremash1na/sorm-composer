@@ -290,6 +290,9 @@ final class Installer
             foreach ($keys as $key => $value) {
                 if (is_array($value)) {
                     foreach ($value as $subKey) {
+                        if($subKey === null || $subKey === '') {
+                            continue;
+                        }
                         $triggerName = "before_{$actualTableName}_update_{$subKey}";
 
                         // Удаляем существующий триггер, если он уже есть
@@ -319,6 +322,9 @@ final class Installer
                         self::executeTrigger($database, $sqlCreate, $actualTableName, $logDir, $date, $now,$subKey);
                     }
                 } else {
+                    if($value === null || $value === '') {
+                        continue;
+                    }
                     $triggerName = "before_{$actualTableName}_update_{$value}";
 
                     // Удаляем существующий триггер, если он уже есть
@@ -356,11 +362,13 @@ final class Installer
         try {
             $stmt = $database->prepare($sql);
             $stmt->execute();
-            echo "[Migrations] Триггер для таблицы {$actualTableName} $value успешно создан.\n";
-            file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Триггер для таблицы {$actualTableName} $value успешно создан.\n", FILE_APPEND);
+            $data = print_r($value, true);
+            echo "[Migrations] Триггер для таблицы {$actualTableName} $data успешно создан.\n";
+            file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Триггер для таблицы {$actualTableName} $data успешно создан.\n", FILE_APPEND);
         } catch (\Exception $e) {
-            file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Ошибка создания триггера для таблицы {$actualTableName} $value: {$e->getMessage()}\n", FILE_APPEND);
-            echo "[Migrations] Ошибка создания триггера для таблицы {$actualTableName} $value: {$e->getMessage()}\n";
+            $data = print_r($value, true);
+            file_put_contents($logDir . "/triggers-{$date}.log", "[$now] [Migrations] Ошибка создания триггера для таблицы {$actualTableName} $data: {$e->getMessage()}\n", FILE_APPEND);
+            echo "[Migrations] Ошибка создания триггера для таблицы {$actualTableName} $data: {$e->getMessage()}\n";
         }
     }
 }
