@@ -1,9 +1,10 @@
 <?php
 /*
- * Copyright (c) 2024 - 2024, Webhost1, LLC. All rights reserved.
+ * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 14.10.2024, 21:01
+ * Updated At: 15.10.2024, 21:52
+ *
  */
 
 namespace SormModule;
@@ -560,7 +561,7 @@ final class Installer
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
                     '{$tableName}',
-                    NEW.{$field},
+                    '0',
                     'INSERT',
                     '{}',
                     logMessage
@@ -579,7 +580,7 @@ final class Installer
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
                     '{$tableName}',
-                    OLD.{$field},
+                    '0',
                     'DELETE',
                     '{}',
                     logMessage
