@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 13:20
+ * Updated At: 16.10.2024, 13:22
  *
  */
 
@@ -727,7 +727,7 @@ final class Installer
         if (is_array($field)) {
             $jsonObject = [];
             foreach ($field as $key => $subfield) {
-                $jsonObject[] = "'$key', " . self::processField($subfield, "$prefix.{$key}");
+                $jsonObject[] = self::processField($subfield, "$prefix.{$key}");
             }
             echo "JSON_OBJECT(" . implode(", ", $jsonObject) . ")";
             return "JSON_OBJECT(" . implode(", ", $jsonObject) . ")";
@@ -743,7 +743,7 @@ final class Installer
             if (is_array($array)) {
                 $jsonObject = [];
                 foreach ($array as $key => $subfield) {
-                    $jsonObject[] = "'$key', " . self::processField($subfield, "$prefix.{$key}");
+                    $jsonObject[] = self::processField($subfield, "$prefix.{$key}");
                 }
                 echo "JSON_OBJECT(" . implode(", ", $jsonObject) . ")";
                 return "JSON_OBJECT(" . implode(", ", $jsonObject) . ")";
