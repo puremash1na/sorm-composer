@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 13:33
+ * Updated At: 16.10.2024, 13:47
  *
  */
 
@@ -556,7 +556,7 @@ final class Installer
             FOR EACH ROW
             BEGIN
                 DECLARE logMessage TEXT;
-                SET logMessage = '{$logTemplate}';
+                SET logMessage = '{".self::replaceMulti($logTemplate,$fields,$tableName)."}';
 
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
@@ -577,7 +577,7 @@ final class Installer
             FOR EACH ROW
             BEGIN
                 DECLARE logMessage TEXT;
-                SET logMessage = '{$logTemplate}';
+                SET logMessage = '{".self::replaceMulti($logTemplate,$fields,$tableName)."}';
 
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
@@ -680,9 +680,34 @@ final class Installer
         }
     }
 
-    private static function replaceMulti(string $template): string
+    private static function replaceMulti(string $template, array $fields, string $tableName): string
     {
+        // Загружаем настройки для ассоциаций
+        $settings = Sorm::loadSettings();
+        $associationsKeys = $settings['associationsKeys'];
 
+        if (!isset($associationsKeys[$tableName])) {
+            throw new \Exception("Таблица $tableName не найдена в ассоциациях.");
+        }
+        $tableFields = $associationsKeys[$tableName];
+
+        foreach ($fields as $placeholder => $value) {
+            if (isset($tableFields[$placeholder])) {
+                $dbField = $tableFields[$placeholder];
+
+                if (is_array($dbField)) {
+                    foreach ($dbField as $index => $subField) {
+                        $template .= str_replace("%{$placeholder}{$index}%", $value[$index] ?? '', $template);
+                    }
+                } else {
+                    $template .= str_replace("%{$placeholder}%", $value ?? '', $template);
+                }
+            }
+        }
+
+        $template .= str_replace('%datePrefix%', date('Y-m-d H:i:s'), $template);
+
+        return $template;
     }
 
     /**
