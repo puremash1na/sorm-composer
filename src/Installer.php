@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 10:14
+ * Updated At: 16.10.2024, 10:18
  *
  */
 
@@ -556,9 +556,13 @@ final class Installer
             case 'INSERT':
                 $jsonDataInfo = "JSON_OBJECT(" . implode(", ", array_map(function($field) {
                         return "'{$field}', CASE
-                    WHEN LEFT(NEW.`{$field}`, 2) = 'a:' THEN JSON_ARRAYAGG(UNCOMPRESS(NEW.`{$field}`))
-                    WHEN LEFT(NEW.`{$field}`, 1) = '{' THEN JSON_UNQUOTE(NEW.`{$field}`)
-                    ELSE NEW.`{$field}`
+                    WHEN NEW.`{$field}` IS NULL THEN NULL
+                    WHEN " . (self::isSerializedArray("NEW.`{$field}`") ?
+                                "OLD.`{$field}` IS NOT NULL THEN 
+                        UNCOMPRESS(NEW.`{$field}`)" :
+                                (self::isJson("NEW.`{$field}`") ?
+                                    "NEW.`{$field}`" :
+                                    "NEW.`{$field}`")) . "
                 END";
                     }, $fields)) . ")";
 
@@ -584,9 +588,13 @@ final class Installer
             case 'DELETE':
                 $jsonDataInfo = "JSON_OBJECT(" . implode(", ", array_map(function($field) {
                         return "'{$field}', CASE
-                    WHEN LEFT(OLD.`{$field}`, 2) = 'a:' THEN JSON_ARRAYAGG(UNCOMPRESS(OLD.`{$field}`))
-                    WHEN LEFT(OLD.`{$field}`, 1) = '{' THEN JSON_UNQUOTE(OLD.`{$field}`)
-                    ELSE OLD.`{$field}`
+                    WHEN NEW.`{$field}` IS NULL THEN NULL
+                    WHEN " . (self::isSerializedArray("NEW.`{$field}`") ?
+                                "OLD.`{$field}` IS NOT NULL THEN 
+                        UNCOMPRESS(NEW.`{$field}`)" :
+                                (self::isJson("NEW.`{$field}`") ?
+                                    "NEW.`{$field}`" :
+                                    "NEW.`{$field}`")) . "
                 END";
                     }, $fields)) . ")";
 
@@ -724,6 +732,16 @@ final class Installer
             echo "[Error] Не удалось подключиться к базе данных: " . $e->getMessage() . "\n";
             return null;
         }
+    }
+
+    private static function isSerializedArray($value): bool
+    {
+        return is_string($value) && (unserialize($value) !== false || $value === 'b:0;');
+    }
+
+    private static function isJson($value): bool
+    {
+        return (json_validate($value));
     }
 
 }
