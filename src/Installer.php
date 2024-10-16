@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 11:00
+ * Updated At: 16.10.2024, 11:02
  *
  */
 
@@ -548,7 +548,14 @@ final class Installer
         // Удаление существующего триггера
         $sqlDrop = "DROP TRIGGER IF EXISTS {$triggerName}";
         $database->exec($sqlDrop);
-
+        if($fieldString === null || $fieldString === '') {
+            return;
+        }
+        foreach ($fields as $field) {
+            if($field === '' || $field === null) {
+                return;
+            }
+        }
         // Подготовка SQL для различных операций
         $sqlCreate = "";
 
@@ -734,7 +741,7 @@ final class Installer
 
     private static function isJson($value): bool
     {
-        if(is_array($value)) return false;
+        if(!is_string($value)) return false;
         echo json_decode($value);
         return (json_last_error() === JSON_ERROR_NONE);
     }
