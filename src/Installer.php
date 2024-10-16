@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 12:58
+ * Updated At: 16.10.2024, 13:02
  *
  */
 
@@ -552,30 +552,41 @@ final class Installer
             case 'INSERT':
                 echo "[Debug] INSERT $tableName [$operation] $data, $fieldString\n";
                 $jsonDataInfo = implode(", ", array_map(function($field) use ($tableName, $billing) {
-                    // Проверка, является ли поле массивом
                     if (is_array($field)) {
                         $fieldString = [];
-                        foreach ($field as $key => $subfield) {
-                            $serializedField = serialize($subfield);
+                        foreach ($field as $subfield) {
                             $fieldString[] = "
-                IF NEW.{$subfield} IS NOT NULL THEN
+                    IF NEW.{$subfield} IS NOT NULL THEN
+                        INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
+                        VALUES (
+                            '{$tableName}', 
+                            NEW.id,
+                            'INSERT', 
+                            JSON_OBJECT('{$subfield}', NEW.{$subfield}),
+                            CONCAT('Вставка записи в таблицу {$tableName}. Поле: {$subfield}. Время: ', NOW(), '. Значение: ', NEW.{$subfield})
+                        );
+                    END IF;
+                ";
+                        }
+                        return implode("\n", $fieldString);
+                    }
+
+                    if (self::isJson($field)) {
+                        return "
+                IF NEW.{$field} IS NOT NULL THEN
                     INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                     VALUES (
                         '{$tableName}', 
                         NEW.id,
                         'INSERT', 
-                        JSON_OBJECT('{$subfield}', '{$serializedField}'),
-                        CONCAT('Вставка записи в таблицу {$tableName}. Поле: {$subfield}. Время: ', NOW(), '. Значение (сериализованное): ', '{$serializedField}')
+                        JSON_OBJECT('{$field}', NEW.{$field}),
+                        CONCAT('Вставка записи в таблицу {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение (JSON): ', NEW.{$field})
                     );
                 END IF;
             ";
-                        }
-                        return implode("\n", $fieldString);
                     }
 
-                    // Проверка, является ли поле JSON
-                    if (self::isJson($field)) {
-                        return "
+                    return "
             IF NEW.{$field} IS NOT NULL THEN
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
@@ -583,72 +594,68 @@ final class Installer
                     NEW.id,
                     'INSERT', 
                     JSON_OBJECT('{$field}', NEW.{$field}),
-                    CONCAT('Вставка записи в таблицу {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение (JSON): ', NEW.{$field})
+                    CONCAT('Вставка записи в таблицу {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение: ', NEW.{$field})
                 );
             END IF;
         ";
-                    }
-
-                    // Обработка обычного текстового поля
-                    return "
-        IF NEW.{$field} IS NOT NULL THEN
-            INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-            VALUES (
-                '{$tableName}', 
-                NEW.id,
-                'INSERT', 
-                JSON_OBJECT('{$field}', NEW.{$field}),
-                CONCAT('Вставка записи в таблицу {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение: ', NEW.{$field})
-            );
-        END IF;
-    ";
                 }, $fields));
 
                 $sqlCreate = "
-            CREATE TRIGGER {$triggerName} AFTER INSERT ON {$tableName}
-            FOR EACH ROW
-            BEGIN
-                DECLARE logMessage TEXT;
-                SET logMessage = '{$logTemplate}';
+        CREATE TRIGGER {$triggerName} AFTER INSERT ON {$tableName}
+        FOR EACH ROW
+        BEGIN
+            DECLARE logMessage TEXT;
+            SET logMessage = '{$logTemplate}';
 
-                INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-                VALUES (
-                    '{$tableName}',
-                    NEW.id,
-                    'INSERT',
-                    {$jsonDataInfo},
-                    logMessage
-                );
-            END;
-            ";
+            INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
+            VALUES (
+                '{$tableName}',
+                NEW.id,
+                'INSERT',
+                {$jsonDataInfo},
+                logMessage
+            );
+        END;
+    ";
                 break;
             case 'DELETE':
                 echo "[Debug] DELETE $tableName [$operation] $data, $fieldString\n";
                 $jsonDataInfo = implode(", ", array_map(function($field) use ($tableName, $billing) {
-                    // Проверка, является ли поле массивом
                     if (is_array($field)) {
                         $fieldString = [];
-                        foreach ($field as $key => $subfield) {
-                            $serializedField = serialize($subfield);
+                        foreach ($field as $subfield) {
                             $fieldString[] = "
-                IF OLD.{$subfield} IS NOT NULL THEN
+                    IF OLD.{$subfield} IS NOT NULL THEN
+                        INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
+                        VALUES (
+                            '{$tableName}', 
+                            OLD.id,
+                            'DELETE', 
+                            JSON_OBJECT('{$subfield}', OLD.{$subfield}),
+                            CONCAT('Удаление записи из таблицы {$tableName}. Поле: {$subfield}. Время: ', NOW(), '. Значение: ', OLD.{$subfield})
+                        );
+                    END IF;
+                ";
+                        }
+                        return implode("\n", $fieldString);
+                    }
+
+                    if (self::isJson($field)) {
+                        return "
+                IF OLD.{$field} IS NOT NULL THEN
                     INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                     VALUES (
                         '{$tableName}', 
                         OLD.id,
                         'DELETE', 
-                        JSON_OBJECT('{$subfield}', '{$serializedField}''),
-                        CONCAT('Удаление записи в таблицу {$tableName}. Поле: {$subfield}. Время: ', NOW(), '. Значение (сериализованное): ', '{$serializedField}')
+                        JSON_OBJECT('{$field}', OLD.{$field}),
+                        CONCAT('Удаление записи из таблицы {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение (JSON): ', OLD.{$field})
                     );
                 END IF;
             ";
-                        }
-                        return implode("\n", $fieldString);
                     }
 
-                    // Проверка, является ли поле JSON
-                    if (self::isJson($field)) {
-                        return "
+                    return "
             IF OLD.{$field} IS NOT NULL THEN
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
@@ -656,44 +663,29 @@ final class Installer
                     OLD.id,
                     'DELETE', 
                     JSON_OBJECT('{$field}', OLD.{$field}),
-                    CONCAT('Вставка записи в таблицу {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение (JSON): ', OLD.{$field})
+                    CONCAT('Удаление записи из таблицы {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение: ', OLD.{$field})
                 );
             END IF;
         ";
-                    }
-
-                    // Обработка обычного текстового поля
-                    return "
-        IF OLD.{$field} IS NOT NULL THEN
-            INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-            VALUES (
-                '{$tableName}', 
-                OLD.id,
-                'DELETE', 
-                JSON_OBJECT('{$field}', OLD.{$field}),
-                CONCAT('Вставка записи в таблицу {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение: ', OLD.{$field})
-            );
-        END IF;
-    ";
                 }, $fields));
 
                 $sqlCreate = "
-            CREATE TRIGGER {$triggerName} BEFORE DELETE ON {$tableName}
-            FOR EACH ROW
-            BEGIN
-                DECLARE logMessage TEXT;
-                SET logMessage = '{$logTemplate}';
+        CREATE TRIGGER {$triggerName} BEFORE DELETE ON {$tableName}
+        FOR EACH ROW
+        BEGIN
+            DECLARE logMessage TEXT;
+            SET logMessage = '{$logTemplate}';
 
-                INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-                VALUES (
-                    '{$tableName}',
-                    OLD.id,
-                    'DELETE',
-                    {$jsonDataInfo},
-                    logMessage
-                );
-            END;
-            ";
+            INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
+            VALUES (
+                '{$tableName}',
+                OLD.id,
+                'DELETE',
+                {$jsonDataInfo},
+                logMessage
+            );
+        END;
+    ";
                 break;
             case 'UPDATE':
                 $sqlCreate = "
