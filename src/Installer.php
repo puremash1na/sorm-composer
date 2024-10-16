@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 10:34
+ * Updated At: 16.10.2024, 10:39
  *
  */
 
@@ -609,57 +609,58 @@ final class Installer
     ";
                 break;
             case 'DELETE':
+                $jsonDataInfo = implode(", ", array_map(function($field) use ($tableName) {
+                    return "
+            IF (OLD.`{$field}` IS NOT NULL) THEN
+                DECLARE isOldSerialized BOOL;
+                DECLARE isOldJson BOOL;
+
+                SET isOldSerialized = (OLD.`{$field}` IS NOT NULL AND LEFT(OLD.`{$field}`, 2) = 'a:');
+                SET isOldJson = (OLD.`{$field}` IS NOT NULL AND LEFT(OLD.`{$field}`, 1) = '{');
+
+                -- Если значение сериализовано, записываем как сериализованный массив
+                IF isOldSerialized THEN
+                    INSERT INTO `billing`.`logs_edit` (tableName, recordId, action, data, comment)
+                    VALUES (
+                        '{$tableName}', 
+                        OLD.id,
+                        'DELETE', 
+                        JSON_OBJECT('{$field}', OLD.`{$field}`),
+                        CONCAT('Удаление записи из таблицы {$tableName}. Поле: {$field}. Время: ', NOW(), '. Старое значение: ', OLD.`{$field}`)
+                    );
+
+                -- Если значение является JSON, записываем как JSON
+                ELSEIF isOldJson THEN
+                    INSERT INTO `billing`.`logs_edit` (tableName, recordId, action, data, comment)
+                    VALUES (
+                        '{$tableName}', 
+                        OLD.id,
+                        'DELETE', 
+                        JSON_OBJECT('{$field}', OLD.`{$field}`),
+                        CONCAT('Удаление записи из таблицы {$tableName}. Поле: {$field}. Время: ', NOW(), '. Старое значение: ', OLD.`{$field}`)
+                    );
+
+                -- Если это обычная строка, записываем как текстовое поле
+                ELSEIF OLD.`{$field}` IS NOT NULL THEN
+                    INSERT INTO `billing`.`logs_edit` (tableName, recordId, action, data, comment)
+                    VALUES (
+                        '{$tableName}', 
+                        OLD.id,
+                        'DELETE', 
+                        JSON_OBJECT('{$field}', OLD.`{$field}`),
+                        CONCAT('Удаление записи из таблицы {$tableName}. Поле: {$field}. Время: ', NOW(), '. Старое значение: ', OLD.`{$field}`)
+                    );
+                END IF;
+            END IF;
+        ";
+                }, $fields));
+
                 $sqlCreate = "
     CREATE TRIGGER {$triggerName}
     BEFORE DELETE ON {$tableName}
     FOR EACH ROW
     BEGIN
-        DECLARE isOldSerialized BOOL;
-        DECLARE isOldJson BOOL;
-
-        -- Проверяем, являются ли старые данные сериализованными или JSON
-        SET isOldSerialized = (OLD.{$fieldString} IS NOT NULL AND LEFT(OLD.{$fieldString}, 2) = 'a:');
-        SET isOldJson = (OLD.{$fieldString} IS NOT NULL AND LEFT(OLD.{$fieldString}, 1) = '{');
-
-        -- Если значение сериализовано, десериализуем его и записываем в лог
-        IF isOldSerialized THEN
-            INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-            VALUES (
-                '{$tableName}', 
-                OLD.id,
-                'DELETE', 
-                JSON_OBJECT(
-                    'oldValue', OLD.{$fieldString}
-                ), 
-                CONCAT('Удалено в таблице {$tableName}. Поле: {$fieldString}. Время: ', NOW(), '. Значение: ', OLD.{$fieldString})
-            );
-
-        -- Если значение является JSON, записываем его в лог как JSON
-        ELSEIF isOldJson THEN
-            INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-            VALUES (
-                '{$tableName}', 
-                OLD.{$primaryKey},
-                'DELETE', 
-                JSON_OBJECT(
-                    'oldValue', OLD.{$fieldString}
-                ), 
-                CONCAT('Удалено в таблице {$tableName}. Поле: {$fieldString}. Время: ', NOW(), '. Значение: ', OLD.{$fieldString})
-            );
-
-        -- Если это обычная строка, обрабатываем как текстовое поле
-        ELSEIF OLD.{$fieldString} IS NOT NULL AND OLD.{$fieldString} != '' THEN
-            INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-            VALUES (
-                '{$tableName}', 
-                OLD.{$primaryKey},
-                'DELETE', 
-                JSON_OBJECT(
-                    'oldValue', OLD.{$fieldString}
-                ), 
-                CONCAT('Удалено в таблице {$tableName}. Поле: {$fieldString}. Время: ', NOW(), '. Значение: ', OLD.{$fieldString})
-            );
-        END IF;
+      {$jsonDataInfo}
     END;
     ";
                 break;
