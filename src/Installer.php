@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 14:02
+ * Updated At: 16.10.2024, 14:11
  *
  */
 
@@ -556,7 +556,7 @@ final class Installer
             FOR EACH ROW
             BEGIN
                 DECLARE logMessage TEXT;
-                SET logMessage = '{".self::replaceMulti($logTemplate,$fields,$tableName)."}';
+                SET logMessage = '".self::replaceMulti($logTemplate,'NEW')."';
 
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
@@ -577,7 +577,7 @@ final class Installer
             FOR EACH ROW
             BEGIN
                 DECLARE logMessage TEXT;
-                SET logMessage = '{".self::replaceMulti($logTemplate,$fields,$tableName)."}';
+                SET logMessage = '".self::replaceMulti($logTemplate,'OLD')."';
 
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
@@ -680,7 +680,7 @@ final class Installer
         }
     }
 
-    private static function replaceMulti(string $template): string
+    private static function replaceMulti(string $template, string $operation): string
     {
         $settings = Sorm::loadSettings();
         $associationsDb = $settings['associationsDb'];
@@ -707,15 +707,15 @@ final class Installer
                         if($subKey === null || $subKey === '') {
                             continue;
                         }
-                        echo "$subKey\n";
-                        $template = str_replace("%{$subKey}%", $value[$subKey] ?? '', $template);
+                        echo "$value[$subKey] 710\n";
+                        $template = str_replace("%{$subKey}%", "$operation.$value[$subKey]", $template);
                     }
                 } else {
                     if($value === null || $value === '') {
                         continue;
                     }
-                    echo "$value\n";
-                    $template = str_replace("%{$value}%", $value, $template);
+                    echo "$value 717\n";
+                    $template = str_replace("%{$value}%", "$operation.$value", $template);
                 }
             }
             $template = str_replace('%datePrefix%', date('Y-m-d H:i:s'), $template);
