@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 12:38
+ * Updated At: 16.10.2024, 12:42
  *
  */
 
@@ -547,62 +547,18 @@ final class Installer
         $database->exec($sqlDrop);
         // Подготовка SQL для различных операций
         $sqlCreate = "";
-
+        $data = json_encode($fields);
         switch (strtoupper($operation)) {
             case 'INSERT':
-                $jsonDataInfo = implode(", ", array_map(function($field) use ($tableName, $billing) {
-                    // Проверка, является ли поле сериализованным массивом
-                    if (self::isSerializedArray($field)) {
-                        return "
-            IF NEW.`{$field}` IS NOT NULL THEN
-                INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-                VALUES (
-                    '{$tableName}', 
-                    NEW.id,
-                    'INSERT', 
-                    JSON_OBJECT('{$field}', NEW.`{$field}`),
-                    CONCAT('Удаление записи из таблицы {$tableName}. Поле: {$field}. Время: ', NOW(), '. Старое значение: ', NEW.`{$field}`)
-                );
-            END IF;
-        ";
-                    }
+                echo "[Debug] INSERT $tableName [$operation] $data, $fieldString\n";
+                $jsonDataInfo = "JSON_OBJECT(" . implode(", ", array_map(fn($field) => "'{$field}', NEW.{$field}", $fields)) . ")";
 
-                    // Проверка, является ли поле JSON
-                    if (self::isJson($field)) {
-                        return "
-            IF NEW.`{$field}` IS NOT NULL THEN
-                INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-                VALUES (
-                    '{$tableName}', 
-                    NEW.id,
-                    'DELETE', 
-                    JSON_OBJECT('{$field}', NEW.`{$field}`),
-                    CONCAT('Удаление записи из таблицы {$tableName}. Поле: {$field}. Время: ', NOW(), '. Старое значение: ', NEW.`{$field}`)
-                );
-            END IF;
-        ";
-                    }
-
-                    // Обработка обычных строковых полей
-                    return "
-        IF NEW.`{$field}` IS NOT NULL THEN
-            INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-            VALUES (
-                '{$tableName}', 
-                NEW.id,
-                'DELETE', 
-                JSON_OBJECT('{$field}', NEW.`{$field}`),
-                CONCAT('Удаление записи из таблицы {$tableName}. Поле: {$field}. Время: ', NOW(), '. Старое значение: ', NEW.`{$field}`)
-            );
-        END IF;
-    ";
-                }, $fields));
                 $sqlCreate = "
             CREATE TRIGGER {$triggerName} AFTER INSERT ON {$tableName}
             FOR EACH ROW
             BEGIN
                 DECLARE logMessage TEXT;
-                SET logMessage = 'Inserted new Data to {$tableName} {$logTemplate}';
+                SET logMessage = '{$logTemplate}';
 
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
@@ -616,61 +572,15 @@ final class Installer
             ";
                 break;
             case 'DELETE':
-                $jsonDataInfo = implode(", ", array_map(function($field) use ($tableName, $billing) {
-                    // Проверка, является ли поле сериализованным массивом
-                    if (self::isSerializedArray($field)) {
-                        return "
-            IF OLD.`{$field}` IS NOT NULL THEN
-                INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-                VALUES (
-                    '{$tableName}', 
-                    OLD.id,
-                    'DELETE', 
-                    JSON_OBJECT('{$field}', OLD.`{$field}`),
-                    CONCAT('Удаление записи из таблицы {$tableName}. Поле: {$field}. Время: ', NOW(), '. Старое значение: ', OLD.`{$field}`)
-                );
-            END IF;
-        ";
-                    }
-
-                    // Проверка, является ли поле JSON
-                    if (self::isJson($field)) {
-                        return "
-            IF OLD.`{$field}` IS NOT NULL THEN
-                INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-                VALUES (
-                    '{$tableName}', 
-                    OLD.id,
-                    'DELETE', 
-                    JSON_OBJECT('{$field}', OLD.`{$field}`),
-                    CONCAT('Удаление записи из таблицы {$tableName}. Поле: {$field}. Время: ', NOW(), '. Старое значение: ', OLD.`{$field}`)
-                );
-            END IF;
-        ";
-                    }
-
-                    // Обработка обычных строковых полей
-                    return "
-        IF OLD.`{$field}` IS NOT NULL THEN
-            INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-            VALUES (
-                '{$tableName}', 
-                OLD.id,
-                'DELETE', 
-                JSON_OBJECT('{$field}', OLD.`{$field}`),
-                CONCAT('Удаление записи из таблицы {$tableName}. Поле: {$field}. Время: ', NOW(), '. Старое значение: ', OLD.`{$field}`)
-            );
-        END IF;
-    ";
-                }, $fields));
-
+                echo "[Debug] DELETE $tableName [$operation] $data, $fieldString\n";
+                $jsonDataInfo = "JSON_OBJECT(" . implode(", ", array_map(fn($field) => "'{$field}', OLD.{$field}", $fields)) . ")";
 
                 $sqlCreate = "
             CREATE TRIGGER {$triggerName} BEFORE DELETE ON {$tableName}
             FOR EACH ROW
             BEGIN
                 DECLARE logMessage TEXT;
-                SET logMessage = 'Deleted old data from {$tableName} {$logTemplate}';
+                SET logMessage = '{$logTemplate}';
 
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
@@ -757,12 +667,12 @@ final class Installer
         try {
             $stmt = $database->prepare($sqlCreate);
             $stmt->execute();
-            echo "[Migrations] Триггер для таблицы {$tableName}[$fieldString][$operation]: успешно создан.\n";
-            file_put_contents(
-                "{$logDir}/triggers-{$date}.log",
-                "[$now] [Migrations] Триггер для таблицы {$tableName}[$fieldString][$operation]: успешно создан.\n",
-                FILE_APPEND
-            );
+//            echo "[Migrations] Триггер для таблицы {$tableName}[$fieldString][$operation]: успешно создан.\n";
+//            file_put_contents(
+//                "{$logDir}/triggers-{$date}.log",
+//                "[$now] [Migrations] Триггер для таблицы {$tableName}[$fieldString][$operation]: успешно создан.\n",
+//                FILE_APPEND
+//            );
         } catch (\Exception $e) {
             $serializedArrays = [];
             $jsonsArrays = [];
@@ -776,11 +686,11 @@ final class Installer
             }
             $dataSer   = json_encode($serializedArrays);
             $dataJsons = json_encode($jsonsArrays);
-            file_put_contents(
-                "{$logDir}/triggers-{$date}.log",
-                "[$now] [Migrations] Ошибка создания триггера для таблицы {$tableName}[$fieldString][$operation] [$triggerName] JSON {$dataJsons} Ser {$dataSer}: {$e->getMessage()}\n",
-                FILE_APPEND
-            );
+//            file_put_contents(
+//                "{$logDir}/triggers-{$date}.log",
+//                "[$now] [Migrations] Ошибка создания триггера для таблицы {$tableName}[$fieldString][$operation] [$triggerName] JSON {$dataJsons} Ser {$dataSer}: {$e->getMessage()}\n",
+//                FILE_APPEND
+//            );
             echo "[Migrations] Ошибка создания триггера для таблицы {$tableName}[$fieldString][$operation] [$triggerName] JSON {$dataJsons} Ser {$dataSer}: {$e->getMessage()}\n";
         }
     }
