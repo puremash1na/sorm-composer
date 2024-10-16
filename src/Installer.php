@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 11:02
+ * Updated At: 16.10.2024, 11:05
  *
  */
 
@@ -549,11 +549,12 @@ final class Installer
         $sqlDrop = "DROP TRIGGER IF EXISTS {$triggerName}";
         $database->exec($sqlDrop);
         if($fieldString === null || $fieldString === '') {
-            return;
-        }
-        foreach ($fields as $field) {
-            if($field === '' || $field === null) {
-                return;
+            echo $sqlDrop ."552". PHP_EOL;
+            foreach ($fields as $field) {
+                if($field === '' || $field === null) {
+                    echo $sqlDrop."555".PHP_EOL;
+                    continue;
+                }
             }
         }
         // Подготовка SQL для различных операций
