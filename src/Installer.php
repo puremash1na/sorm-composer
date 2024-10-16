@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 10:50
+ * Updated At: 16.10.2024, 10:53
  *
  */
 
@@ -557,7 +557,7 @@ final class Installer
                 $jsonDataInfo = "JSON_OBJECT(" . implode(", ", array_map(fn($field) => "'{$field}', NEW.{$field}", $fields)) . ")";
 
                 $sqlCreate = "
-            CREATE TRIGGER {$triggerName} BEFORE INSERT ON {$tableName}
+            CREATE TRIGGER {$triggerName} AFTER INSERT ON {$tableName}
             FOR EACH ROW
             BEGIN
                 DECLARE logMessage TEXT;
