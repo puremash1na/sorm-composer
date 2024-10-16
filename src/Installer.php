@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 13:09
+ * Updated At: 16.10.2024, 13:14
  *
  */
 
@@ -551,18 +551,16 @@ final class Installer
         switch (strtoupper($operation)) {
             case 'INSERT':
                 echo "[Debug] INSERT $tableName [$operation] $data, $fieldString\n";
+                $jsonFields = array_map(function($field) {
+                    return self::processField($field);
+                }, $fields);
+
                 $sqlCreate = "
         CREATE TRIGGER {$triggerName} AFTER INSERT ON {$tableName}
         FOR EACH ROW
         BEGIN
             DECLARE jsonData JSON;
-            SET jsonData = JSON_OBJECT(" . implode(", ", array_map(function($field) {
-                        return "'{$field}', CASE
-                    WHEN NEW.{$field} IS NULL THEN NULL
-                    WHEN JSON_VALID(NEW.{$field}) THEN NEW.{$field}
-                    ELSE JSON_QUOTE(NEW.{$field})
-                END";
-                    }, $fields)) . ");
+            SET jsonData = JSON_OBJECT(" . implode(", ", $jsonFields) . ");
 
             INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
             VALUES (
@@ -577,18 +575,16 @@ final class Installer
                 break;
             case 'DELETE':
                 echo "[Debug] DELETE $tableName [$operation] $data, $fieldString\n";
+                $jsonFields = array_map(function($field) {
+                    return self::processField($field, 'OLD');
+                }, $fields);
+
                 $sqlCreate = "
         CREATE TRIGGER {$triggerName} BEFORE DELETE ON {$tableName}
         FOR EACH ROW
         BEGIN
             DECLARE jsonData JSON;
-            SET jsonData = JSON_OBJECT(" . implode(", ", array_map(function($field) {
-                        return "'{$field}', CASE
-                    WHEN OLD.{$field} IS NULL THEN NULL
-                    WHEN JSON_VALID(OLD.{$field}) THEN OLD.{$field}
-                    ELSE JSON_QUOTE(OLD.{$field})
-                END";
-                    }, $fields)) . ");
+            SET jsonData = JSON_OBJECT(" . implode(", ", $jsonFields) . ");
 
             INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
             VALUES (
@@ -725,6 +721,29 @@ final class Installer
             echo "[Error] Не удалось подключиться к базе данных: " . $e->getMessage() . "\n";
             return null;
         }
+    }
+    private static function processField($field, $prefix = 'NEW'): string
+    {
+        if (is_array($field)) {
+            $jsonObject = [];
+            foreach ($field as $key => $subfield) {
+                $jsonObject[] = "'$key', " . self::processField($subfield, $prefix . ".{$key}");
+            }
+            return "JSON_OBJECT(" . implode(", ", $jsonObject) . ")";
+        }
+
+        if (self::isJson($field)) {
+            return "$prefix.{$field}";
+        }
+        if(self::isSerializedArray($field)) {
+            $array = @unserialize($field);
+            $jsonObject = [];
+            foreach ($array as $key => $subfield) {
+                $jsonObject[] = "'$key', " . self::processField($subfield, $prefix . ".{$key}");
+            }
+            return "JSON_OBJECT(" . implode(", ", $jsonObject) . ")";
+        }
+        return "CASE WHEN {$prefix}.{$field} IS NOT NULL THEN JSON_QUOTE({$prefix}.{$field}) ELSE NULL END";
     }
 
     private static function isSerializedArray($value): bool
