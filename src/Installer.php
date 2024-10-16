@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 10:53
+ * Updated At: 16.10.2024, 10:57
  *
  */
 
@@ -676,12 +676,24 @@ final class Installer
                 FILE_APPEND
             );
         } catch (\Exception $e) {
+            $serializedArrays = [];
+            $jsonsArrays = [];
+            foreach ($fields as $field) {
+                if(self::isSerializedArray($field)) {
+                    $serializedArrays[] = unserialize($field);
+                }
+                if(self::isJson($field)) {
+                    $jsonsArrays[] = json_decode($field);
+                }
+            }
+            $dataSer   = json_encode($serializedArrays);
+            $dataJsons = json_encode($jsonsArrays);
             file_put_contents(
                 "{$logDir}/triggers-{$date}.log",
-                "[$now] [Migrations] Ошибка создания триггера для таблицы {$tableName}[$fieldString][$operation] [$triggerName]: {$e->getMessage()}\n",
+                "[$now] [Migrations] Ошибка создания триггера для таблицы {$tableName}[$fieldString][$operation] [$triggerName] JSON {$dataJsons} Ser {$dataSer}: {$e->getMessage()}\n",
                 FILE_APPEND
             );
-            echo "[Migrations] Ошибка создания триггера для таблицы {$tableName}[$fieldString][$operation] [$triggerName]: {$e->getMessage()}\n";
+            echo "[Migrations] Ошибка создания триггера для таблицы {$tableName}[$fieldString][$operation] [$triggerName] JSON {$dataJsons} Ser {$dataSer}: {$e->getMessage()}\n";
         }
     }
 
