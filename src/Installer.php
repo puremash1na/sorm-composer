@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 13:22
+ * Updated At: 16.10.2024, 13:24
  *
  */
 
@@ -722,38 +722,39 @@ final class Installer
             return null;
         }
     }
-    private static function processField($field, $prefix = 'NEW'): string
+    private static function processField($field, $prefix = 'OLD'): string
     {
         if (is_array($field)) {
             $jsonObject = [];
             foreach ($field as $key => $subfield) {
-                $jsonObject[] = self::processField($subfield, "$prefix.{$key}");
+                // Рекурсивная обработка для вложенных массивов
+                $jsonObject[] = "'$key', " . self::processField($subfield, "$prefix.{$key}");
             }
-            echo "JSON_OBJECT(" . implode(", ", $jsonObject) . ")";
-            return "JSON_OBJECT(" . implode(", ", $jsonObject) . ")";
+            // Проверка, чтобы JSON_OBJECT не был пустым
+            return !empty($jsonObject) ? "JSON_OBJECT(" . implode(", ", $jsonObject) . ")" : "NULL";
         }
 
+        // Проверка на JSON
         if (self::isJson($field)) {
-            echo "$prefix.{$field}";
             return "$prefix.{$field}";
         }
 
+        // Проверка на сериализованный массив
         if (self::isSerializedArray($field)) {
-            $array = unserialize($field);
+            $array = @unserialize($field);
             if (is_array($array)) {
                 $jsonObject = [];
                 foreach ($array as $key => $subfield) {
-                    $jsonObject[] = self::processField($subfield, "$prefix.{$key}");
+                    $jsonObject[] = "'$key', " . self::processField($subfield, "$prefix.{$key}");
                 }
-                echo "JSON_OBJECT(" . implode(", ", $jsonObject) . ")";
-                return "JSON_OBJECT(" . implode(", ", $jsonObject) . ")";
+                return !empty($jsonObject) ? "JSON_OBJECT(" . implode(", ", $jsonObject) . ")" : "NULL";
             }
         }
 
         // Возвращение значения для обычного поля
-        echo "CASE WHEN {$prefix}.{$field} IS NOT NULL THEN JSON_QUOTE({$prefix}.{$field}) ELSE NULL END";
         return "CASE WHEN {$prefix}.{$field} IS NOT NULL THEN JSON_QUOTE({$prefix}.{$field}) ELSE NULL END";
     }
+
 
     private static function isSerializedArray($value): bool
     {
