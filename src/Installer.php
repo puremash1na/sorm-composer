@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 14:11
+ * Updated At: 16.10.2024, 14:20
  *
  */
 
@@ -556,7 +556,7 @@ final class Installer
             FOR EACH ROW
             BEGIN
                 DECLARE logMessage TEXT;
-                SET logMessage = '".self::replaceMulti($logTemplate,'NEW')."';
+                SET logMessage = CONCAT('".self::replaceMulti($logTemplate,'NEW')."');
 
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
@@ -577,7 +577,7 @@ final class Installer
             FOR EACH ROW
             BEGIN
                 DECLARE logMessage TEXT;
-                SET logMessage = '".self::replaceMulti($logTemplate,'OLD')."';
+                SET logMessage = CONCAT('".self::replaceMulti($logTemplate,'OLD')."');
 
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
@@ -704,24 +704,24 @@ final class Installer
             foreach ($keys as $key => $value) {
                 if (is_array($value)) {
                     foreach ($value as $subKey) {
-                        if($subKey === null || $subKey === '') {
+                        if ($subKey === null || $subKey === '') {
                             continue;
                         }
-                        echo "$value[$subKey] 710\n";
-                        $template = str_replace("%{$subKey}%", "$operation.$value[$subKey]", $template);
+                        $template = str_replace("%{$subKey}%", "CONCAT('$operation.', $operation.$subKey)", $template);
                     }
                 } else {
-                    if($value === null || $value === '') {
+                    if ($value === null || $value === '') {
                         continue;
                     }
-                    echo "$value 717\n";
-                    $template = str_replace("%{$value}%", "$operation.$value", $template);
+                    $template = str_replace("%{$value}%", "CONCAT('$operation.', $operation.$value)", $template);
                 }
             }
             $template = str_replace('%datePrefix%', date('Y-m-d H:i:s'), $template);
         }
+
         return $template;
     }
+
 
     /**
      * Ru: Инициализация с базой данных исходя из ее данных авторизации
