@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 10:18
+ * Updated At: 16.10.2024, 10:20
  *
  */
 
@@ -736,12 +736,15 @@ final class Installer
 
     private static function isSerializedArray($value): bool
     {
-        return is_string($value) && (unserialize($value) !== false || $value === 'b:0;');
+        if (!is_string($value)) return false;
+        $unserialized = @unserialize($value);
+        return $unserialized !== false || $value === 'b:0;';
     }
 
     private static function isJson($value): bool
     {
-        return (json_validate($value));
+        json_decode($value);
+        return (json_last_error() === JSON_ERROR_NONE);
     }
 
 }
