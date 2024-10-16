@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 14:39
+ * Updated At: 16.10.2024, 14:41
  *
  */
 
@@ -285,17 +285,18 @@ final class Installer
         $database = Sorm::initDatabase();
 
         $sql = "
-        CREATE TABLE IF NOT EXISTS logs_edit (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            tableName VARCHAR(255) NOT NULL,
-            recordId INT NOT NULL,
-            action VARCHAR(50) NOT NULL,
-            data JSON NOT NULL,
-            comment TEXT NOT NULL,
-            changedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            sendedAtSorm TINYINT(1) NOT NULL DEFAULT 0,
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-    ";
+    CREATE TABLE IF NOT EXISTS logs_edit (
+        id INT AUTO_INCREMENT PRIMARY KEY,
+        tableName VARCHAR(255) NOT NULL,
+        recordId INT NOT NULL,
+        action VARCHAR(50) NOT NULL,
+        data JSON NOT NULL,
+        comment TEXT NOT NULL,
+        changedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        sendedAtSorm TINYINT(1) NOT NULL DEFAULT 0
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+";
+
         $logDir = self::getLogDir();
         $date = date('d-m-Y');
         $now = date('H:i:s');
