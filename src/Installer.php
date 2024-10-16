@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 13:29
+ * Updated At: 16.10.2024, 13:31
  *
  */
 
@@ -552,7 +552,7 @@ final class Installer
                 $jsonDataInfo = "JSON_OBJECT(" . implode(", ", array_map(fn($field) => "'{$field}', NEW.{$field}", $fields)) . ")";
 
                 $sqlCreate = "
-            CREATE TRIGGER {$triggerName} BEFORE INSERT ON {$tableName}
+            CREATE TRIGGER {$triggerName} AFTER INSERT ON {$tableName}
             FOR EACH ROW
             BEGIN
                 DECLARE logMessage TEXT;
@@ -561,7 +561,7 @@ final class Installer
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
                     '{$tableName}',
-                    '0',
+                    NEW.id,
                     'INSERT',
                     {$jsonDataInfo},
                     logMessage
@@ -582,7 +582,7 @@ final class Installer
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
                     '{$tableName}',
-                    '0',
+                    OLD.id,
                     'DELETE',
                     {$jsonDataInfo},
                     logMessage
