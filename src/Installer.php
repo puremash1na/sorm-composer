@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 12:53
+ * Updated At: 16.10.2024, 12:58
  *
  */
 
@@ -558,7 +558,7 @@ final class Installer
                         foreach ($field as $key => $subfield) {
                             $serializedField = serialize($subfield);
                             $fieldString[] = "
-                IF NEW.`{$subfield}` IS NOT NULL THEN
+                IF NEW.{$subfield} IS NOT NULL THEN
                     INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                     VALUES (
                         '{$tableName}', 
@@ -576,14 +576,14 @@ final class Installer
                     // Проверка, является ли поле JSON
                     if (self::isJson($field)) {
                         return "
-            IF NEW.`{$field}` IS NOT NULL THEN
+            IF NEW.{$field} IS NOT NULL THEN
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
                     '{$tableName}', 
                     NEW.id,
                     'INSERT', 
-                    JSON_OBJECT('{$field}', NEW.`{$field}`),
-                    CONCAT('Вставка записи в таблицу {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение (JSON): ', NEW.`{$field}`)
+                    JSON_OBJECT('{$field}', NEW.{$field}),
+                    CONCAT('Вставка записи в таблицу {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение (JSON): ', NEW.{$field})
                 );
             END IF;
         ";
@@ -591,14 +591,14 @@ final class Installer
 
                     // Обработка обычного текстового поля
                     return "
-        IF NEW.`{$field}` IS NOT NULL THEN
+        IF NEW.{$field} IS NOT NULL THEN
             INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
             VALUES (
                 '{$tableName}', 
                 NEW.id,
                 'INSERT', 
-                JSON_OBJECT('{$field}', NEW.`{$field}`),
-                CONCAT('Вставка записи в таблицу {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение: ', NEW.`{$field}`)
+                JSON_OBJECT('{$field}', NEW.{$field}),
+                CONCAT('Вставка записи в таблицу {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение: ', NEW.{$field})
             );
         END IF;
     ";
@@ -631,13 +631,13 @@ final class Installer
                         foreach ($field as $key => $subfield) {
                             $serializedField = serialize($subfield);
                             $fieldString[] = "
-                IF OLD.`{$subfield}` IS NOT NULL THEN
+                IF OLD.{$subfield} IS NOT NULL THEN
                     INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                     VALUES (
                         '{$tableName}', 
                         OLD.id,
                         'DELETE', 
-                        JSON_OBJECT('{$subfield}', '{$serializedField}'),
+                        JSON_OBJECT('{$subfield}', '{$serializedField}''),
                         CONCAT('Удаление записи в таблицу {$tableName}. Поле: {$subfield}. Время: ', NOW(), '. Значение (сериализованное): ', '{$serializedField}')
                     );
                 END IF;
@@ -649,14 +649,14 @@ final class Installer
                     // Проверка, является ли поле JSON
                     if (self::isJson($field)) {
                         return "
-            IF OLD.`{$field}` IS NOT NULL THEN
+            IF OLD.{$field} IS NOT NULL THEN
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
                     '{$tableName}', 
                     OLD.id,
                     'DELETE', 
-                    JSON_OBJECT('{$field}', OLD.`{$field}`),
-                    CONCAT('Вставка записи в таблицу {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение (JSON): ', OLD.`{$field}`)
+                    JSON_OBJECT('{$field}', OLD.{$field}),
+                    CONCAT('Вставка записи в таблицу {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение (JSON): ', OLD.{$field})
                 );
             END IF;
         ";
@@ -664,14 +664,14 @@ final class Installer
 
                     // Обработка обычного текстового поля
                     return "
-        IF OLD.`{$field}` IS NOT NULL THEN
+        IF OLD.{$field} IS NOT NULL THEN
             INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
             VALUES (
                 '{$tableName}', 
                 OLD.id,
                 'DELETE', 
-                JSON_OBJECT('{$field}', OLD.`{$field}`),
-                CONCAT('Вставка записи в таблицу {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение: ', OLD.`{$field}`)
+                JSON_OBJECT('{$field}', OLD.{$field}),
+                CONCAT('Вставка записи в таблицу {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение: ', OLD.{$field})
             );
         END IF;
     ";
