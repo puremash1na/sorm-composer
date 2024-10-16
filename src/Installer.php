@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 10:41
+ * Updated At: 16.10.2024, 10:46
  *
  */
 
@@ -609,35 +609,13 @@ final class Installer
     ";
                 break;
             case 'DELETE':
-                $jsonDataInfo = implode(", ", array_map(function($field) use ($tableName) {
-                    return "
-            -- Проверяем, является ли значение сериализованным или JSON
+                $jsonDataInfo = implode(", ", array_map(function($field) use ($tableName, $billing) {
+                    // Проверка на сериализованный массив
+                    if (self::isSerializedArray($field)) {
+                        return "
             IF OLD.`{$field}` IS NOT NULL THEN
-                -- Если это сериализованный массив
                 IF LEFT(OLD.`{$field}`, 2) = 'a:' THEN
-                    INSERT INTO `billing`.`logs_edit` (tableName, recordId, action, data, comment)
-                    VALUES (
-                        '{$tableName}', 
-                        OLD.id,
-                        'DELETE', 
-                        JSON_OBJECT('{$field}', OLD.`{$field}`),
-                        CONCAT('Удаление записи из таблицы {$tableName}. Поле: {$field}. Время: ', NOW(), '. Старое значение: ', OLD.`{$field}`)
-                    );
-                
-                -- Если это JSON
-                ELSEIF LEFT(OLD.`{$field}`, 1) = '{' THEN
-                    INSERT INTO `billing`.`logs_edit` (tableName, recordId, action, data, comment)
-                    VALUES (
-                        '{$tableName}', 
-                        OLD.id,
-                        'DELETE', 
-                        JSON_OBJECT('{$field}', OLD.`{$field}`),
-                        CONCAT('Удаление записи из таблицы {$tableName}. Поле: {$field}. Время: ', NOW(), '. Старое значение: ', OLD.`{$field}`)
-                    );
-
-                -- Если это обычная строка
-                ELSE
-                    INSERT INTO `billing`.`logs_edit` (tableName, recordId, action, data, comment)
+                    INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                     VALUES (
                         '{$tableName}', 
                         OLD.id,
@@ -648,8 +626,40 @@ final class Installer
                 END IF;
             END IF;
         ";
-                }, $fields));
+                    }
 
+                    // Проверка на JSON
+                    if (self::isJson($field)) {
+                        return "
+            IF OLD.`{$field}` IS NOT NULL THEN
+                IF LEFT(OLD.`{$field}`, 1) = '{' THEN
+                    INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
+                    VALUES (
+                        '{$tableName}', 
+                        OLD.id,
+                        'DELETE', 
+                        JSON_OBJECT('{$field}', OLD.`{$field}`),
+                        CONCAT('Удаление записи из таблицы {$tableName}. Поле: {$field}. Время: ', NOW(), '. Старое значение: ', OLD.`{$field}`)
+                    );
+                END IF;
+            END IF;
+        ";
+                    }
+
+                    // Если это не сериализованный массив и не JSON, обычная строка
+                    return "
+        IF OLD.`{$field}` IS NOT NULL THEN
+            INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
+            VALUES (
+                '{$tableName}', 
+                OLD.id,
+                'DELETE', 
+                JSON_OBJECT('{$field}', OLD.`{$field}`),
+                CONCAT('Удаление записи из таблицы {$tableName}. Поле: {$field}. Время: ', NOW(), '. Старое значение: ', OLD.`{$field}`)
+            );
+        END IF;
+    ";
+                }, $fields));
 
                 $sqlCreate = "
     CREATE TRIGGER {$triggerName}
