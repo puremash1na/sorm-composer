@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 13:02
+ * Updated At: 16.10.2024, 13:06
  *
  */
 
@@ -556,16 +556,14 @@ final class Installer
                         $fieldString = [];
                         foreach ($field as $subfield) {
                             $fieldString[] = "
-                    IF NEW.{$subfield} IS NOT NULL THEN
-                        INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-                        VALUES (
-                            '{$tableName}', 
-                            NEW.id,
-                            'INSERT', 
-                            JSON_OBJECT('{$subfield}', NEW.{$subfield}),
-                            CONCAT('Вставка записи в таблицу {$tableName}. Поле: {$subfield}. Время: ', NOW(), '. Значение: ', NEW.{$subfield})
-                        );
-                    END IF;
+                    INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
+                    VALUES (
+                        '{$tableName}', 
+                        NEW.id,
+                        'INSERT', 
+                        JSON_OBJECT('{$subfield}', NEW.{$subfield}),
+                        CONCAT('Вставка записи в таблицу {$tableName}. Поле: {$subfield}. Время: ', NOW(), '. Значение: ', NEW.{$subfield})
+                    );
                 ";
                         }
                         return implode("\n", $fieldString);
@@ -573,30 +571,26 @@ final class Installer
 
                     if (self::isJson($field)) {
                         return "
-                IF NEW.{$field} IS NOT NULL THEN
-                    INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-                    VALUES (
-                        '{$tableName}', 
-                        NEW.id,
-                        'INSERT', 
-                        JSON_OBJECT('{$field}', NEW.{$field}),
-                        CONCAT('Вставка записи в таблицу {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение (JSON): ', NEW.{$field})
-                    );
-                END IF;
-            ";
-                    }
-
-                    return "
-            IF NEW.{$field} IS NOT NULL THEN
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
                     '{$tableName}', 
                     NEW.id,
                     'INSERT', 
                     JSON_OBJECT('{$field}', NEW.{$field}),
-                    CONCAT('Вставка записи в таблицу {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение: ', NEW.{$field})
+                    CONCAT('Вставка записи в таблицу {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение (JSON): ', NEW.{$field})
                 );
-            END IF;
+            ";
+                    }
+
+                    return "
+            INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
+            VALUES (
+                '{$tableName}', 
+                NEW.id,
+                'INSERT', 
+                JSON_OBJECT('{$field}', NEW.{$field}),
+                CONCAT('Вставка записи в таблицу {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение: ', NEW.{$field})
+            );
         ";
                 }, $fields));
 
@@ -604,17 +598,7 @@ final class Installer
         CREATE TRIGGER {$triggerName} AFTER INSERT ON {$tableName}
         FOR EACH ROW
         BEGIN
-            DECLARE logMessage TEXT;
-            SET logMessage = '{$logTemplate}';
-
-            INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-            VALUES (
-                '{$tableName}',
-                NEW.id,
-                'INSERT',
-                {$jsonDataInfo},
-                logMessage
-            );
+            {$jsonDataInfo}
         END;
     ";
                 break;
@@ -625,16 +609,14 @@ final class Installer
                         $fieldString = [];
                         foreach ($field as $subfield) {
                             $fieldString[] = "
-                    IF OLD.{$subfield} IS NOT NULL THEN
-                        INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-                        VALUES (
-                            '{$tableName}', 
-                            OLD.id,
-                            'DELETE', 
-                            JSON_OBJECT('{$subfield}', OLD.{$subfield}),
-                            CONCAT('Удаление записи из таблицы {$tableName}. Поле: {$subfield}. Время: ', NOW(), '. Значение: ', OLD.{$subfield})
-                        );
-                    END IF;
+                    INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
+                    VALUES (
+                        '{$tableName}', 
+                        OLD.id,
+                        'DELETE', 
+                        JSON_OBJECT('{$subfield}', OLD.{$subfield}),
+                        CONCAT('Удаление записи в таблицу {$tableName}. Поле: {$subfield}. Время: ', NOW(), '. Значение: ', OLD.{$subfield})
+                    );
                 ";
                         }
                         return implode("\n", $fieldString);
@@ -642,30 +624,26 @@ final class Installer
 
                     if (self::isJson($field)) {
                         return "
-                IF OLD.{$field} IS NOT NULL THEN
-                    INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-                    VALUES (
-                        '{$tableName}', 
-                        OLD.id,
-                        'DELETE', 
-                        JSON_OBJECT('{$field}', OLD.{$field}),
-                        CONCAT('Удаление записи из таблицы {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение (JSON): ', OLD.{$field})
-                    );
-                END IF;
-            ";
-                    }
-
-                    return "
-            IF OLD.{$field} IS NOT NULL THEN
                 INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
                 VALUES (
                     '{$tableName}', 
                     OLD.id,
                     'DELETE', 
                     JSON_OBJECT('{$field}', OLD.{$field}),
-                    CONCAT('Удаление записи из таблицы {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение: ', OLD.{$field})
+                    CONCAT('Удаление записи в таблицу {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение (JSON): ', OLD.{$field})
                 );
-            END IF;
+            ";
+                    }
+
+                    return "
+            INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
+            VALUES (
+                '{$tableName}', 
+                OLD.id,
+                'DELETE', 
+                JSON_OBJECT('{$field}', OLD.{$field}),
+                CONCAT('Удаление записи в таблицу {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение: ', OLD.{$field})
+            );
         ";
                 }, $fields));
 
@@ -673,17 +651,7 @@ final class Installer
         CREATE TRIGGER {$triggerName} BEFORE DELETE ON {$tableName}
         FOR EACH ROW
         BEGIN
-            DECLARE logMessage TEXT;
-            SET logMessage = '{$logTemplate}';
-
-            INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-            VALUES (
-                '{$tableName}',
-                OLD.id,
-                'DELETE',
-                {$jsonDataInfo},
-                logMessage
-            );
+            {$jsonDataInfo}
         END;
     ";
                 break;
