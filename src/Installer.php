@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 13:51
+ * Updated At: 16.10.2024, 13:55
  *
  */
 
@@ -680,37 +680,48 @@ final class Installer
         }
     }
 
-    private static function replaceMulti(string $template, array $fields, string $tableName): string
+    private static function replaceMulti(string $template): string
     {
         $settings = Sorm::loadSettings();
         $associationsDb = $settings['associationsDb'];
         $associationsKeys = $settings['associationsKeys'];
 
-        if (isset($associationsKeys[$tableName])) {
-            $tableFields = $associationsKeys[$tableName];
-        } elseif (isset($associationsDb[$tableName])) {
-            $tableFields = $associationsDb[$tableName];
-            $tableFields = array_map(fn($value) => $value['database'], $tableFields);
-        } else {
-            throw new \Exception("Таблица $tableName не найдена в ассоциациях.");
-        }
+        foreach ($associationsDb as $logicalTableName => $dbConfig) {
+            $dbType = key($dbConfig);
+            $dbCreds = $settings[$dbType] ?? null;
 
-        foreach ($fields as $placeholder => $value) {
-            if (isset($tableFields[$placeholder])) {
-                $dbField = $tableFields[$placeholder];
-                if (is_array($dbField)) {
-                    foreach ($dbField as $index => $subField) {
-                        $template .= str_replace("%{$placeholder}{$index}%", $value[$index] ?? '', $template);
+            if (!$dbCreds) {
+                echo "[Error] Креды для базы данных {$dbType} не найдены.\n";
+                continue;
+            }
+
+            $keys = $associationsKeys[$logicalTableName] ?? null;
+
+            if (!$keys) {
+                continue;
+            }
+
+            foreach ($keys as $key => $value) {
+                if (is_array($value)) {
+                    foreach ($value as $subKey) {
+                        if($subKey === null || $subKey === '') {
+                            continue;
+                        }
+                        echo "$subKey\n";
+                        $template .= str_replace("%{$subKey}%", $value[$subKey] ?? '', $template);
                     }
                 } else {
-                    $template .= str_replace("%{$placeholder}%", $value ?? '', $template);
+                    if($value === null || $value === '') {
+                        continue;
+                    }
+                    echo $value;
+                    $template .= str_replace("%{$value}%", $value, $template);
                 }
             }
+            $template .= str_replace('%datePrefix%', date('Y-m-d H:i:s'), $template);
+
+            return $template;
         }
-
-        $template .= str_replace('%datePrefix%', date('Y-m-d H:i:s'), $template);
-
-        return $template;
     }
 
     /**
