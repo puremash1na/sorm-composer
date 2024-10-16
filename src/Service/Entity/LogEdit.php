@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: LogEdit.php
- * Updated At: 15.10.2024, 15:50
+ * Updated At: 16.10.2024, 14:39
  *
  */
 
@@ -18,6 +18,7 @@ final class LogEdit
     private ?array $data;
     private string $comment;
     private string $changedAt;
+    private int    $sendedAtSorm;
 
     /**
      * @return int
@@ -73,6 +74,14 @@ final class LogEdit
     public function getChangedAt(): string
     {
         return $this->changedAt;
+    }
+
+    /**
+     * @return int
+     */
+    public function getSendedAtSorm(): int
+    {
+        return $this->sendedAtSorm;
     }
     public function setId(int $id): LogEdit
     {
@@ -139,4 +148,13 @@ final class LogEdit
         return $this;
     }
 
+    /**
+     * @param int $sendedAtSorm
+     * @return LogEdit
+     */
+    public function setSendedAtSorm(int $sendedAtSorm): LogEdit
+    {
+        $this->sendedAtSorm = $sendedAtSorm;
+        return $this;
+    }
 }

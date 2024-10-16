@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 14:31
+ * Updated At: 16.10.2024, 14:39
  *
  */
 
@@ -292,7 +292,8 @@ final class Installer
             action VARCHAR(50) NOT NULL,
             data JSON NOT NULL,
             comment TEXT NOT NULL,
-            changedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            changedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            sendedAtSorm TINYINT(1) NOT NULL DEFAULT 0,
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
     ";
         $logDir = self::getLogDir();
