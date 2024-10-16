@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 14:43
+ * Updated At: 16.10.2024, 14:46
  *
  */
 
@@ -288,7 +288,7 @@ final class Installer
     CREATE TABLE IF NOT EXISTS logs_edit (
         id INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Уникальный идентификатор записи',
         tableName VARCHAR(255) NOT NULL COMMENT 'Название таблицы, к которой относится запись',
-        recordId INT NOT NULL COMMENT 'Идентификатор записи в соответствующей таблице',
+        recordId BIGINT NOT NULL COMMENT 'Идентификатор записи в соответствующей таблице (max 2^64-1)',
         action VARCHAR(50) NOT NULL COMMENT 'Тип действия (INSERT, UPDATE, DELETE)',
         data JSON NOT NULL COMMENT 'Данные, связанные с записью в формате JSON',
         comment TEXT NOT NULL COMMENT 'Дополнительные комментарии к записи',
