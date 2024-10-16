@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 11:05
+ * Updated At: 16.10.2024, 11:08
  *
  */
 
@@ -548,20 +548,12 @@ final class Installer
         // Удаление существующего триггера
         $sqlDrop = "DROP TRIGGER IF EXISTS {$triggerName}";
         $database->exec($sqlDrop);
-        if($fieldString === null || $fieldString === '') {
-            echo $sqlDrop ."552". PHP_EOL;
-            foreach ($fields as $field) {
-                if($field === '' || $field === null) {
-                    echo $sqlDrop."555".PHP_EOL;
-                    continue;
-                }
-            }
-        }
         // Подготовка SQL для различных операций
         $sqlCreate = "";
 
         switch (strtoupper($operation)) {
             case 'INSERT':
+                dd($fields,$fieldString);
                 $jsonDataInfo = "JSON_OBJECT(" . implode(", ", array_map(fn($field) => "'{$field}', NEW.{$field}", $fields)) . ")";
 
                 $sqlCreate = "
@@ -583,6 +575,7 @@ final class Installer
             ";
                 break;
             case 'DELETE':
+                dd($fields,$fieldString);
                 $jsonDataInfo = "JSON_OBJECT(" . implode(", ", array_map(fn($field) => "'{$field}', OLD.{$field}", $fields)) . ")";
 
                 $sqlCreate = "
