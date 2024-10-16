@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 13:55
+ * Updated At: 16.10.2024, 14:02
  *
  */
 
@@ -13,24 +13,6 @@ use Symfony\Component\Yaml\Yaml;
 
 final class Installer
 {
-    public const PREFIX_INSERT_INTO_DESCRIPTION = [
-        'logs_is'         => "Пользователь [#%userId%] перешел %urlPath%. Время: %datePrefix%",
-        'operations'      => "Пользователь [#%userId%] совершил операцию [#%payId%], Name: %payName%, Время: %datePrefix%",
-        'orders'          => "Пользователю [#%userId%] добавлена новая услуга [#%orderId%]. Время: %datePrefix%",
-        'payment_methods' => "Администратор добавил новый платежный метод: %payName%, Отображание: %visible%, Время: %datePrefix%",
-        'person'          => "Зарегестрирован новый пользователь [#%userId%], Время: %datePrefix%",
-        'tariffs'         => "Администратор добавил новый тариф [#%tariffId%], Время: %datePrefix%",
-        'tickets'         => "Пользователь [#%userId%] создал/ответил в запросах [#%ticketId%], Время: %datePrefix%",
-    ];
-    public const PREFIX_DELETE_DESCRIPTION = [
-        'logs_is'         => "Удалена запись по переходу пользователя [#%userId%], path: %urlPath%. Время: %datePrefix%",
-        'operations'      => "Удалена запись о совершении операции [#%payId%] пользователем [#%userId%], Name: %payName%, Время: %datePrefix%",
-        'orders'          => "Удалена запись о добавлении новой услуги [#%orderId%] пользователю [#%userId%], Время: %datePrefix%",
-        'payment_methods' => "Удалена запись о добавлении нового платежного метода [%payName%] администратором, Время: %datePrefix%",
-        'person'          => "Удалена запись о регистрации нового пользователя [#%userId%], Время: %date%",
-        'tariffs'         => "Удалена запись о добавлении нового тарифа [#%tariffId%] администратором, Время: %datePrefix%",
-        'tickets'         => "Удалена запись о создании/ответа в запросах [#%ticketId%] пользователем [#%userId%], Время: %datePrefix%"
-    ];
     /**
      * Ru: Устанавливает модуль SORM, создавая необходимые директории и файлы конфигурации в корне проекта.
      *
@@ -212,6 +194,24 @@ final class Installer
                         'order_name' => '',
                         'closed'     => '',
                     ],
+                ],
+                'PREFIX_DELETE_DESCRIPTION' => [
+                    'logs_is'         => "Удалена запись по переходу пользователя [#%userId%], path: %urlPath%. Время: %datePrefix%",
+                    'operations'      => "Удалена запись о совершении операции [#%payId%] пользователем [#%userId%], Name: %payName%, Время: %datePrefix%",
+                    'orders'          => "Удалена запись о добавлении новой услуги [#%orderId%] пользователю [#%userId%], Время: %datePrefix%",
+                    'payment_methods' => "Удалена запись о добавлении нового платежного метода [%payName%] администратором, Время: %datePrefix%",
+                    'person'          => "Удалена запись о регистрации нового пользователя [#%userId%], Время: %date%",
+                    'tariffs'         => "Удалена запись о добавлении нового тарифа [#%tariffId%] администратором, Время: %datePrefix%",
+                    'tickets'         => "Удалена запись о создании/ответа в запросах [#%ticketId%] пользователем [#%userId%], Время: %datePrefix%"
+                ],
+                'PREFIX_INSERT_INTO_DESCRIPTION' => [
+                    'logs_is'         => "Пользователь [#%userId%] перешел %url%. Время: %datePrefix%",
+                    'operations'      => "Пользователь [#%userId%] совершил операцию [#%payId%], Name: %name%, Время: %datePrefix%",
+                    'orders'          => "Пользователю [#%userId%] добавлена новая услуга [#%orderId%]. Время: %datePrefix%",
+                    'payment_methods' => "Администратор добавил новый платежный метод: %payName%, Отображание: %visible%, Время: %datePrefix%",
+                    'person'          => "Зарегестрирован новый пользователь [#%userId%], Время: %datePrefix%",
+                    'tariffs'         => "Администратор добавил новый тариф [#%tariffId%], Время: %datePrefix%",
+                    'tickets'         => "Пользователь [#%userId%] создал/ответил в запросах [#%ticketId%], Время: %datePrefix%"
                 ],
                 'autoCronExport' => '01:00:00'
             ];
@@ -495,14 +495,14 @@ final class Installer
         string $date,
         string $now
     ): void {
-
+        $settings = Sorm::loadSettings();
         $validFields = array_filter($fields, function($field) {
             return !is_null($field) && $field !== '';
         });
 
         // INSERT INTO триггер
         $insertTriggerName = "before_{$tableName}_insert";
-        $insertLog = self::PREFIX_INSERT_INTO_DESCRIPTION[$logicalTableName] ?? '';
+        $insertLog = $settings['PREFIX_INSERT_INTO_DESCRIPTION'][$logicalTableName] ?? '';
         self::createTrigger(
             $database, $billing, $insertTriggerName, $tableName, 'INSERT',$validFields,
             $field, $primaryKey, $insertLog, $logDir, $date, $now
@@ -510,7 +510,7 @@ final class Installer
 
         // DELETE триггер
         $deleteTriggerName = "before_{$tableName}_delete";
-        $deleteLog = self::PREFIX_DELETE_DESCRIPTION[$logicalTableName] ?? '';
+        $deleteLog = $settings['PREFIX_DELETE_DESCRIPTION'][$logicalTableName] ?? '';
         self::createTrigger(
             $database, $billing, $deleteTriggerName, $tableName, 'DELETE',$validFields,
             $field, $primaryKey, $deleteLog, $logDir, $date, $now
@@ -708,20 +708,19 @@ final class Installer
                             continue;
                         }
                         echo "$subKey\n";
-                        $template .= str_replace("%{$subKey}%", $value[$subKey] ?? '', $template);
+                        $template = str_replace("%{$subKey}%", $value[$subKey] ?? '', $template);
                     }
                 } else {
                     if($value === null || $value === '') {
                         continue;
                     }
-                    echo $value;
-                    $template .= str_replace("%{$value}%", $value, $template);
+                    echo "$value\n";
+                    $template = str_replace("%{$value}%", $value, $template);
                 }
             }
-            $template .= str_replace('%datePrefix%', date('Y-m-d H:i:s'), $template);
-
-            return $template;
+            $template = str_replace('%datePrefix%', date('Y-m-d H:i:s'), $template);
         }
+        return $template;
     }
 
     /**
