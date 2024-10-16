@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 13:14
+ * Updated At: 16.10.2024, 13:17
  *
  */
 
@@ -727,7 +727,7 @@ final class Installer
         if (is_array($field)) {
             $jsonObject = [];
             foreach ($field as $key => $subfield) {
-                $jsonObject[] = "'$key', " . self::processField($subfield, $prefix . ".{$key}");
+                $jsonObject[] = "'$key', " . self::processField($subfield, "$prefix.{$key}");
             }
             return "JSON_OBJECT(" . implode(", ", $jsonObject) . ")";
         }
@@ -735,14 +735,19 @@ final class Installer
         if (self::isJson($field)) {
             return "$prefix.{$field}";
         }
-        if(self::isSerializedArray($field)) {
-            $array = @unserialize($field);
-            $jsonObject = [];
-            foreach ($array as $key => $subfield) {
-                $jsonObject[] = "'$key', " . self::processField($subfield, $prefix . ".{$key}");
+
+        if (self::isSerializedArray($field)) {
+            $array = unserialize($field);
+            if (is_array($array)) {
+                $jsonObject = [];
+                foreach ($array as $key => $subfield) {
+                    $jsonObject[] = "'$key', " . self::processField($subfield, "$prefix.{$key}");
+                }
+                return "JSON_OBJECT(" . implode(", ", $jsonObject) . ")";
             }
-            return "JSON_OBJECT(" . implode(", ", $jsonObject) . ")";
         }
+
+        // Возвращение значения для обычного поля
         return "CASE WHEN {$prefix}.{$field} IS NOT NULL THEN JSON_QUOTE({$prefix}.{$field}) ELSE NULL END";
     }
 
