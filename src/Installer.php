@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 13:17
+ * Updated At: 16.10.2024, 13:20
  *
  */
 
@@ -729,10 +729,12 @@ final class Installer
             foreach ($field as $key => $subfield) {
                 $jsonObject[] = "'$key', " . self::processField($subfield, "$prefix.{$key}");
             }
+            echo "JSON_OBJECT(" . implode(", ", $jsonObject) . ")";
             return "JSON_OBJECT(" . implode(", ", $jsonObject) . ")";
         }
 
         if (self::isJson($field)) {
+            echo "$prefix.{$field}";
             return "$prefix.{$field}";
         }
 
@@ -743,11 +745,13 @@ final class Installer
                 foreach ($array as $key => $subfield) {
                     $jsonObject[] = "'$key', " . self::processField($subfield, "$prefix.{$key}");
                 }
+                echo "JSON_OBJECT(" . implode(", ", $jsonObject) . ")";
                 return "JSON_OBJECT(" . implode(", ", $jsonObject) . ")";
             }
         }
 
         // Возвращение значения для обычного поля
+        echo "CASE WHEN {$prefix}.{$field} IS NOT NULL THEN JSON_QUOTE({$prefix}.{$field}) ELSE NULL END";
         return "CASE WHEN {$prefix}.{$field} IS NOT NULL THEN JSON_QUOTE({$prefix}.{$field}) ELSE NULL END";
     }
 
