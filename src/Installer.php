@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 14:41
+ * Updated At: 16.10.2024, 14:43
  *
  */
 
@@ -286,16 +286,17 @@ final class Installer
 
         $sql = "
     CREATE TABLE IF NOT EXISTS logs_edit (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        tableName VARCHAR(255) NOT NULL,
-        recordId INT NOT NULL,
-        action VARCHAR(50) NOT NULL,
-        data JSON NOT NULL,
-        comment TEXT NOT NULL,
-        changedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        sendedAtSorm TINYINT(1) NOT NULL DEFAULT 0
+        id INT AUTO_INCREMENT PRIMARY KEY COMMENT 'Уникальный идентификатор записи',
+        tableName VARCHAR(255) NOT NULL COMMENT 'Название таблицы, к которой относится запись',
+        recordId INT NOT NULL COMMENT 'Идентификатор записи в соответствующей таблице',
+        action VARCHAR(50) NOT NULL COMMENT 'Тип действия (INSERT, UPDATE, DELETE)',
+        data JSON NOT NULL COMMENT 'Данные, связанные с записью в формате JSON',
+        comment TEXT NOT NULL COMMENT 'Дополнительные комментарии к записи',
+        changedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP COMMENT 'Время изменения записи',
+        sendedAtSorm TINYINT(1) NOT NULL DEFAULT 0 COMMENT 'Флаг отправки записи в SORM'
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 ";
+
 
         $logDir = self::getLogDir();
         $date = date('d-m-Y');
