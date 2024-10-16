@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 13:06
+ * Updated At: 16.10.2024, 13:09
  *
  */
 
@@ -551,107 +551,53 @@ final class Installer
         switch (strtoupper($operation)) {
             case 'INSERT':
                 echo "[Debug] INSERT $tableName [$operation] $data, $fieldString\n";
-                $jsonDataInfo = implode(", ", array_map(function($field) use ($tableName, $billing) {
-                    if (is_array($field)) {
-                        $fieldString = [];
-                        foreach ($field as $subfield) {
-                            $fieldString[] = "
-                    INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-                    VALUES (
-                        '{$tableName}', 
-                        NEW.id,
-                        'INSERT', 
-                        JSON_OBJECT('{$subfield}', NEW.{$subfield}),
-                        CONCAT('Вставка записи в таблицу {$tableName}. Поле: {$subfield}. Время: ', NOW(), '. Значение: ', NEW.{$subfield})
-                    );
-                ";
-                        }
-                        return implode("\n", $fieldString);
-                    }
+                $sqlCreate = "
+        CREATE TRIGGER {$triggerName} AFTER INSERT ON {$tableName}
+        FOR EACH ROW
+        BEGIN
+            DECLARE jsonData JSON;
+            SET jsonData = JSON_OBJECT(" . implode(", ", array_map(function($field) {
+                        return "'{$field}', CASE
+                    WHEN NEW.{$field} IS NULL THEN NULL
+                    WHEN JSON_VALID(NEW.{$field}) THEN NEW.{$field}
+                    ELSE JSON_QUOTE(NEW.{$field})
+                END";
+                    }, $fields)) . ");
 
-                    if (self::isJson($field)) {
-                        return "
-                INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-                VALUES (
-                    '{$tableName}', 
-                    NEW.id,
-                    'INSERT', 
-                    JSON_OBJECT('{$field}', NEW.{$field}),
-                    CONCAT('Вставка записи в таблицу {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение (JSON): ', NEW.{$field})
-                );
-            ";
-                    }
-
-                    return "
             INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
             VALUES (
                 '{$tableName}', 
                 NEW.id,
                 'INSERT', 
-                JSON_OBJECT('{$field}', NEW.{$field}),
-                CONCAT('Вставка записи в таблицу {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение: ', NEW.{$field})
+                jsonData,
+                CONCAT('Вставка записи в таблицу {$tableName}. Время: ', NOW())
             );
-        ";
-                }, $fields));
-
-                $sqlCreate = "
-        CREATE TRIGGER {$triggerName} AFTER INSERT ON {$tableName}
-        FOR EACH ROW
-        BEGIN
-            {$jsonDataInfo}
         END;
     ";
                 break;
             case 'DELETE':
                 echo "[Debug] DELETE $tableName [$operation] $data, $fieldString\n";
-                $jsonDataInfo = implode(", ", array_map(function($field) use ($tableName, $billing) {
-                    if (is_array($field)) {
-                        $fieldString = [];
-                        foreach ($field as $subfield) {
-                            $fieldString[] = "
-                    INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-                    VALUES (
-                        '{$tableName}', 
-                        OLD.id,
-                        'DELETE', 
-                        JSON_OBJECT('{$subfield}', OLD.{$subfield}),
-                        CONCAT('Удаление записи в таблицу {$tableName}. Поле: {$subfield}. Время: ', NOW(), '. Значение: ', OLD.{$subfield})
-                    );
-                ";
-                        }
-                        return implode("\n", $fieldString);
-                    }
+                $sqlCreate = "
+        CREATE TRIGGER {$triggerName} BEFORE DELETE ON {$tableName}
+        FOR EACH ROW
+        BEGIN
+            DECLARE jsonData JSON;
+            SET jsonData = JSON_OBJECT(" . implode(", ", array_map(function($field) {
+                        return "'{$field}', CASE
+                    WHEN OLD.{$field} IS NULL THEN NULL
+                    WHEN JSON_VALID(OLD.{$field}) THEN OLD.{$field}
+                    ELSE JSON_QUOTE(OLD.{$field})
+                END";
+                    }, $fields)) . ");
 
-                    if (self::isJson($field)) {
-                        return "
-                INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
-                VALUES (
-                    '{$tableName}', 
-                    OLD.id,
-                    'DELETE', 
-                    JSON_OBJECT('{$field}', OLD.{$field}),
-                    CONCAT('Удаление записи в таблицу {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение (JSON): ', OLD.{$field})
-                );
-            ";
-                    }
-
-                    return "
             INSERT INTO `{$billing}`.`logs_edit` (tableName, recordId, action, data, comment)
             VALUES (
                 '{$tableName}', 
                 OLD.id,
                 'DELETE', 
-                JSON_OBJECT('{$field}', OLD.{$field}),
-                CONCAT('Удаление записи в таблицу {$tableName}. Поле: {$field}. Время: ', NOW(), '. Значение: ', OLD.{$field})
+                jsonData,
+                CONCAT('Удаление записи в таблицу {$tableName}. Время: ', NOW())
             );
-        ";
-                }, $fields));
-
-                $sqlCreate = "
-        CREATE TRIGGER {$triggerName} BEFORE DELETE ON {$tableName}
-        FOR EACH ROW
-        BEGIN
-            {$jsonDataInfo}
         END;
     ";
                 break;
