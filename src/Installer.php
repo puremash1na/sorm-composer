@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 11:12
+ * Updated At: 16.10.2024, 12:32
  *
  */
 
@@ -496,15 +496,15 @@ final class Installer
         string $now
     ): void {
 
-        if ($field === null || $field === '') {
-            return;
-        }
+        $validFields = array_filter($fields, function($field) {
+            return !is_null($field) && $field !== '';
+        });
 
         // INSERT INTO триггер
         $insertTriggerName = "before_{$tableName}_insert";
         $insertLog = self::PREFIX_INSERT_INTO_DESCRIPTION[$logicalTableName] ?? '';
         self::createTrigger(
-            $database, $billing, $insertTriggerName, $tableName, 'INSERT',$fields,
+            $database, $billing, $insertTriggerName, $tableName, 'INSERT',$validFields,
             $field, $primaryKey, $insertLog, $logDir, $date, $now
         );
 
@@ -512,7 +512,7 @@ final class Installer
         $deleteTriggerName = "before_{$tableName}_delete";
         $deleteLog = self::PREFIX_DELETE_DESCRIPTION[$logicalTableName] ?? '';
         self::createTrigger(
-            $database, $billing, $deleteTriggerName, $tableName, 'DELETE',$fields,
+            $database, $billing, $deleteTriggerName, $tableName, 'DELETE',$validFields,
             $field, $primaryKey, $deleteLog, $logDir, $date, $now
         );
 
@@ -520,7 +520,7 @@ final class Installer
         $updateTriggerName = "before_{$tableName}_update_{$field}";
         $updateLog = "Изменение в таблице {$tableName} [trigger: {$updateTriggerName}]. Поле: {$field}. Время: {$now}";
         self::createTrigger(
-            $database, $billing, $updateTriggerName, $tableName, 'UPDATE',$fields,
+            $database, $billing, $updateTriggerName, $tableName, 'UPDATE',$validFields,
             $field, $primaryKey, $updateLog, $logDir, $date, $now
         );
     }
