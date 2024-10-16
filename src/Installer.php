@@ -664,12 +664,12 @@ final class Installer
         try {
             $stmt = $database->prepare($sqlCreate);
             $stmt->execute();
-            echo "[Migrations] Триггер для таблицы {$tableName}[$fieldString][$operation]: успешно создан.\n";
-            file_put_contents(
-                "{$logDir}/triggers-{$date}.log",
-                "[$now] [Migrations] Триггер для таблицы {$tableName}[$fieldString][$operation]: успешно создан.\n",
-                FILE_APPEND
-            );
+//            echo "[Migrations] Триггер для таблицы {$tableName}[$fieldString][$operation]: успешно создан.\n";
+//            file_put_contents(
+//                "{$logDir}/triggers-{$date}.log",
+//                "[$now] [Migrations] Триггер для таблицы {$tableName}[$fieldString][$operation]: успешно создан.\n",
+//                FILE_APPEND
+//            );
         } catch (\Exception $e) {
             file_put_contents(
                 "{$logDir}/triggers-{$date}.log",
