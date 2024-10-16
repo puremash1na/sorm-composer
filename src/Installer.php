@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 11:08
+ * Updated At: 16.10.2024, 11:12
  *
  */
 
@@ -440,14 +440,11 @@ final class Installer
         $associationsKeys = $settings['associationsKeys'];
         $billing = $settings['database']['name'];
         $logDir = self::getLogDir();
-
+        $date = date('d.m.Y');
+        $now = date('H:i:s');
         if (!is_dir($logDir)) {
             mkdir($logDir, 0777, true);
         }
-
-        $date = date('d-m-Y');
-        $now = date('H:i:s');
-
         foreach ($associationsDb as $logicalTableName => $dbConfig) {
             $dbType = key($dbConfig);
             $tableName = $dbConfig[$dbType];
@@ -553,7 +550,8 @@ final class Installer
 
         switch (strtoupper($operation)) {
             case 'INSERT':
-                dd($fields,$fieldString);
+
+                var_dump($tableName,$fields,$fieldString);
                 $jsonDataInfo = "JSON_OBJECT(" . implode(", ", array_map(fn($field) => "'{$field}', NEW.{$field}", $fields)) . ")";
 
                 $sqlCreate = "
@@ -575,7 +573,7 @@ final class Installer
             ";
                 break;
             case 'DELETE':
-                dd($fields,$fieldString);
+                var_dump($tableName,$fields,$fieldString);
                 $jsonDataInfo = "JSON_OBJECT(" . implode(", ", array_map(fn($field) => "'{$field}', OLD.{$field}", $fields)) . ")";
 
                 $sqlCreate = "
