@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 17.10.2024, 16:12
+ * Updated At: 17.10.2024, 16:19
  *
  */
 
@@ -558,7 +558,15 @@ final class Installer extends SormService
         $sqlCreate = "";
         switch (strtoupper($operation)) {
             case 'INSERT':
-                $jsonDataInfo = "JSON_OBJECT('$fieldString',NEW.".$fieldString.")";
+                $jsonFields = [];
+                foreach ($fields as $key => $value) {
+                    if (is_array($value)) {
+                        $jsonFields[] = "'$key', JSON_ARRAY(" . implode(", ", array_map(fn($v) => "NEW.$v", $value)) . ")";
+                    } else {
+                        $jsonFields[] = "'$key', NEW.$value";
+                    }
+                }
+                $jsonDataInfo = "JSON_OBJECT(" . implode(", ", $jsonFields) . ")";
 
                 $sqlCreate = "
             CREATE TRIGGER {$triggerName} AFTER INSERT ON {$tableName}
@@ -579,7 +587,15 @@ final class Installer extends SormService
             ";
                 break;
             case 'DELETE':
-                $jsonDataInfo = "JSON_OBJECT('$fieldString',OLD.".$fieldString.")";
+                $jsonFields = [];
+                foreach ($fields as $key => $value) {
+                    if (is_array($value)) {
+                        $jsonFields[] = "'$key', JSON_ARRAY(" . implode(", ", array_map(fn($v) => "OLD.$v", $value)) . ")";
+                    } else {
+                        $jsonFields[] = "'$key', NEW.$value";
+                    }
+                }
+                $jsonDataInfo = "JSON_OBJECT(" . implode(", ", $jsonFields) . ")";
                 $sqlCreate = "
             CREATE TRIGGER {$triggerName} BEFORE DELETE ON {$tableName}
             FOR EACH ROW
