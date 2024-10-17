@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ChipperSecurity.php
- * Updated At: 17.10.2024, 15:48
+ * Updated At: 17.10.2024, 15:51
  *
  */
 
@@ -71,8 +71,10 @@ final class ChipperSecurity extends SormService
     public static function generateAppKey(): string
     {
         self::$settings = Sorm::loadSettings();
-
-        $appKey = self::generateRandomBytes(128);
+        if(strlen(self::$settings['APP_KEY']) > 0) {
+            throw new \Exception('App key already exists.');
+        }
+        $appKey = self::generateRandomBytes(32);
         self::$settings['APP_KEY'] = $appKey;
         Sorm::saveSettings(self::$settings);
         return $appKey;
