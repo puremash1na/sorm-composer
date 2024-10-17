@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 17.10.2024, 16:19
+ * Updated At: 17.10.2024, 16:24
  *
  */
 
@@ -592,7 +592,7 @@ final class Installer extends SormService
                     if (is_array($value)) {
                         $jsonFields[] = "'$key', JSON_ARRAY(" . implode(", ", array_map(fn($v) => "OLD.$v", $value)) . ")";
                     } else {
-                        $jsonFields[] = "'$key', NEW.$value";
+                        $jsonFields[] = "'$key', OLD.$value";
                     }
                 }
                 $jsonDataInfo = "JSON_OBJECT(" . implode(", ", $jsonFields) . ")";
@@ -688,20 +688,20 @@ final class Installer extends SormService
         try {
             $stmt = $database->prepare($sqlCreate);
             $stmt->execute();
-//            echo "[Migrations] Триггер для таблицы {$tableName}[$fieldString][$operation]: успешно создан.\n";
-//            file_put_contents(
-//                "{$logDir}/triggers-{$date}.log",
-//                "[$now] [Migrations] Триггер для таблицы {$tableName}[$fieldString][$operation]: успешно создан.\n",
-//                FILE_APPEND
-//            );
+            echo "[Migrations $date - $now] Триггер для таблицы {$tableName}[$fieldString][$operation]: успешно создан.\n";
+            file_put_contents(
+                "{$logDir}/triggers-{$date}.log",
+                "[$now] [Migrations] Триггер для таблицы {$tableName}[$fieldString][$operation]: успешно создан.\n",
+                FILE_APPEND
+            );
         } catch (\Exception $e) {
             echo "Ошибка {$tableName}[$fieldString][$operation] [$triggerName] {$e->getMessage()}\n\n";
-//            file_put_contents(
-//                "{$logDir}/triggers-{$date}.log",
-//                "[$now] [Migrations] Ошибка создания триггера для таблицы {$tableName}[$fieldString][$operation] [$triggerName] {$e->getMessage()}\n",
-//                FILE_APPEND
-//            );
-//            echo "[Migrations] Ошибка создания триггера для таблицы {$tableName}[$fieldString][$operation] [$triggerName] {$e->getMessage()}\n";
+            file_put_contents(
+                "{$logDir}/triggers-{$date}.log",
+                "[$now] [Migrations] Ошибка создания триггера для таблицы {$tableName}[$fieldString][$operation] [$triggerName] {$e->getMessage()}\n",
+                FILE_APPEND
+            );
+            echo "[Migrations $date - $now] Ошибка создания триггера для таблицы {$tableName}[$fieldString][$operation] [$triggerName] {$e->getMessage()}\n";
         }
     }
 
