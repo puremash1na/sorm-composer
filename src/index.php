@@ -3,9 +3,10 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: index.php
- * Updated At: 17.10.2024, 13:44
+ * Updated At: 17.10.2024, 13:50
  *
  */
+
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -26,6 +27,7 @@ if (php_sapi_name() === 'cli') {
                 echo "Обновляем APP_KEY и шифруем данные\n";
                 try {
                     \SormModule\Service\Security\ChipperSecurity::generateAppKey();
+                    \SormModule\Service\Security\ChipperSecurity::encryptDb();
                 } catch (\Random\RandomException $e) {
                     echo "Произошла ошибка при выполнении команды chipper:" . $e->getMessage() . "\n";
                 }
