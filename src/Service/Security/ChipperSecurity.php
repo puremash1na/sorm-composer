@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ChipperSecurity.php
- * Updated At: 17.10.2024, 13:50
+ * Updated At: 17.10.2024, 13:53
  *
  */
 
@@ -98,5 +98,27 @@ final class ChipperSecurity extends SormService
 
         Sorm::saveSettings(self::$settings);
     }
+    public static function decryptDb(): array
+    {
+        self::$settings = Sorm::loadSettings();
 
+        if (isset(self::$settings['database'])) {
+            self::$settings['database']['host']     = self::decrypt(self::$settings['database']['host']);
+            self::$settings['database']['name']     = self::decrypt(self::$settings['database']['name']);
+            self::$settings['database']['user']     = self::decrypt(self::$settings['database']['user']);
+            self::$settings['database']['password'] = self::decrypt(self::$settings['database']['password']);
+            self::$settings['database']['port']     = self::decrypt(self::$settings['database']['port']);
+        }
+
+
+        if (isset(self::$settings['paymmentMethods'])) {
+            self::$settings['paymmentMethods']['host']     = self::decrypt(self::$settings['paymmentMethods']['host']);
+            self::$settings['paymmentMethods']['name']     = self::decrypt(self::$settings['paymmentMethods']['name']);
+            self::$settings['paymmentMethods']['user']     = self::decrypt(self::$settings['paymmentMethods']['user']);
+            self::$settings['paymmentMethods']['password'] = self::decrypt(self::$settings['paymmentMethods']['password']);
+            self::$settings['paymmentMethods']['port']     = self::decrypt(self::$settings['paymmentMethods']['port']);
+        }
+
+        return self::$settings;
+    }
 }
