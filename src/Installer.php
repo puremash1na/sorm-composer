@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 17.10.2024, 16:45
+ * Updated At: 17.10.2024, 17:41
  *
  */
 
@@ -575,7 +575,9 @@ final class Installer extends SormService
                     }
                 }
                 $jsonDataInfo = "JSON_OBJECT(" . implode(", ", $jsonFields) . ")";
-
+                if($tableName === 'persons') {
+                    echo $jsonDataInfo."\n";
+                }
                 $sqlCreate = "
             CREATE TRIGGER {$triggerName} AFTER INSERT ON {$tableName}
             FOR EACH ROW
@@ -610,6 +612,9 @@ final class Installer extends SormService
                     }
                 }
                 $jsonDataInfo = "JSON_OBJECT(" . implode(", ", $jsonFields) . ")";
+                if($tableName === 'persons') {
+                    echo $jsonDataInfo."\n";
+                }
                 $sqlCreate = "
             CREATE TRIGGER {$triggerName} BEFORE DELETE ON {$tableName}
             FOR EACH ROW
