@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: index.php
- * Updated At: 17.10.2024, 13:54
+ * Updated At: 17.10.2024, 15:45
  *
  */
 
@@ -26,11 +26,12 @@ if (php_sapi_name() === 'cli') {
             case 'chipper':
                 echo "Обновляем APP_KEY и шифруем данные\n";
                 try {
+                    \SormModule\Service\Security\ChipperSecurity::decryptDb(true);
                     \SormModule\Service\Security\ChipperSecurity::generateAppKey();
                     \SormModule\Service\Security\ChipperSecurity::encryptDb();
                     echo "Тестируем расшифровку данных БД:\n";
                     $data = SormModule\Service\Security\ChipperSecurity::decryptDb();
-                    echo json_encode($data, JSON_UNESCAPED_UNICODE);
+                    echo json_encode($data, JSON_UNESCAPED_UNICODE) . PHP_EOL;
                 } catch (\Random\RandomException $e) {
                     echo "Произошла ошибка при выполнении команды chipper:" . $e->getMessage() . "\n";
                 }

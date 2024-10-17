@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ChipperSecurity.php
- * Updated At: 17.10.2024, 15:43
+ * Updated At: 17.10.2024, 15:45
  *
  */
 
@@ -136,7 +136,10 @@ final class ChipperSecurity extends SormService
         Sorm::saveSettings(self::$settings);
     }
 
-    public static function decryptDb(): array
+    /**
+     * @throws \Exception
+     */
+    public static function decryptDb(bool $safe = false): array
     {
         self::$settings = Sorm::loadSettings();
 
@@ -156,7 +159,9 @@ final class ChipperSecurity extends SormService
             self::$settings['paymmentMethods']['password'] = self::decrypt(self::$settings['paymmentMethods']['password']);
             self::$settings['paymmentMethods']['port']     = self::decrypt(self::$settings['paymmentMethods']['port']);
         }
-
+        if($safe) {
+            Sorm::saveSettings(self::$settings);
+        }
         return self::$settings;
     }
 }
