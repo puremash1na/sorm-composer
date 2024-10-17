@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ChipperSecurity.php
- * Updated At: 17.10.2024, 15:39
+ * Updated At: 17.10.2024, 15:43
  *
  */
 
@@ -34,11 +34,15 @@ final class ChipperSecurity extends SormService
             $encryptedData = openssl_encrypt($encryptedData, 'aes-256-cbc', $appKey, 0, substr($appKey, 0, 16));
         }
 
-        return $encryptedData;
+        return 'enc'.$encryptedData;
     }
 
     public static function decrypt(mixed $data)
     {
+        if (str_starts_with($data, 'enc')) {
+            $data = substr($data, 3);
+        }
+
         $appKey = self::$settings['APP_KEY'];
         $rounds = self::$settings['CHIPPER_ROUNDS'];
 
@@ -49,10 +53,10 @@ final class ChipperSecurity extends SormService
 
         return $decryptedData;
     }
+
     public static function verifyEncrypted(mixed $data): bool
     {
-        $decryptedData = self::decrypt($data);
-        if ($decryptedData !== false) {
+        if (str_starts_with($data, 'enc')) {
             return true;
         }
 
