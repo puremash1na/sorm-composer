@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Sorm.php
- * Updated At: 17.10.2024, 13:44
+ * Updated At: 17.10.2024, 16:00
  *
  */
 
@@ -11,6 +11,7 @@ namespace SormModule;
 
 use Exception;
 use PDO;
+use SormModule\Service\Security\ChipperSecurity;
 use SormModule\Service\Security\SormService;
 use Symfony\Component\Yaml\Yaml;
 
@@ -69,7 +70,7 @@ final class Sorm extends SormService
      */
     public static function initDatabase(?string $paymentMethod = ''): ?PDO
     {
-        self::loadSettings();
+        self::$settings = ChipperSecurity::decryptDb();
         try {
             $dsn = sprintf(
                 'mysql:host=%s;port=%s;charset=utf8',
