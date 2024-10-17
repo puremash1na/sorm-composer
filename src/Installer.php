@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 17.10.2024, 16:36
+ * Updated At: 17.10.2024, 16:45
  *
  */
 
@@ -566,8 +566,10 @@ final class Installer extends SormService
                     } else {
                         // Проверка для одиночных значений
                         if ($key !== $fieldString) {
+                            echo "!!! 569: $key, $value\n";
                             $jsonFields[] = "'$key', NEW.$value"; // добавляем $fieldString
                         } else {
+                            echo "!!! 572: $fieldString, $value\n";
                             $jsonFields[] = "'$fieldString', NEW.$value"; // оставляем как есть
                         }
                     }
@@ -599,8 +601,10 @@ final class Installer extends SormService
                         $jsonFields[] = "'$key', JSON_ARRAY(" . implode(", ", array_map(fn($v) => $key !== $fieldString ? "OLD.$v" : "OLD.$fieldString", $value)) . ")";
                     } else {
                         if ($key !== $fieldString) {
+                            echo "!!! 604: $key, $value\n";
                             $jsonFields[] = "'$key', OLD.$value"; // добавляем $fieldString
                         } else {
+                            echo "!!! 607: $fieldString, $value\n";
                             $jsonFields[] = "'$fieldString', OLD.$value"; // оставляем как есть
                         }
                     }
