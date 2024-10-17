@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 17.10.2024, 15:57
+ * Updated At: 17.10.2024, 16:04
  *
  */
 
@@ -558,6 +558,8 @@ final class Installer extends SormService
         $sqlCreate = "";
         switch (strtoupper($operation)) {
             case 'INSERT':
+                $json = json_encode($fields);
+                echo "Все поля арр для $operation $tableName $json, $fieldString\n";
                 $jsonDataInfo = "JSON_OBJECT(" . implode(", ", array_map(fn($field) => "'{$field}', NEW.{$field}", $fields)) . ")";
 
                 $sqlCreate = "
@@ -579,6 +581,8 @@ final class Installer extends SormService
             ";
                 break;
             case 'DELETE':
+                $json = json_encode($fields);
+                echo "Все поля арр для $operation $tableName $json, $fieldString\n";
                 $jsonDataInfo = "JSON_OBJECT(" . implode(", ", array_map(fn($field) => "'{$field}', OLD.{$field}", $fields)) . ")";
 
                 $sqlCreate = "
@@ -680,12 +684,13 @@ final class Installer extends SormService
 //                FILE_APPEND
 //            );
         } catch (\Exception $e) {
-            file_put_contents(
-                "{$logDir}/triggers-{$date}.log",
-                "[$now] [Migrations] Ошибка создания триггера для таблицы {$tableName}[$fieldString][$operation] [$triggerName] {$e->getMessage()}\n",
-                FILE_APPEND
-            );
-            echo "[Migrations] Ошибка создания триггера для таблицы {$tableName}[$fieldString][$operation] [$triggerName] {$e->getMessage()}\n";
+            echo "Ошибка {$tableName}[$fieldString][$operation] [$triggerName] {$e->getMessage()}\n\n";
+//            file_put_contents(
+//                "{$logDir}/triggers-{$date}.log",
+//                "[$now] [Migrations] Ошибка создания триггера для таблицы {$tableName}[$fieldString][$operation] [$triggerName] {$e->getMessage()}\n",
+//                FILE_APPEND
+//            );
+//            echo "[Migrations] Ошибка создания триггера для таблицы {$tableName}[$fieldString][$operation] [$triggerName] {$e->getMessage()}\n";
         }
     }
 
