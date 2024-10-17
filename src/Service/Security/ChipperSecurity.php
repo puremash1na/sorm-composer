@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ChipperSecurity.php
- * Updated At: 17.10.2024, 13:53
+ * Updated At: 17.10.2024, 15:39
  *
  */
 
@@ -49,7 +49,15 @@ final class ChipperSecurity extends SormService
 
         return $decryptedData;
     }
+    public static function verifyEncrypted(mixed $data): bool
+    {
+        $decryptedData = self::decrypt($data);
+        if ($decryptedData !== false) {
+            return true;
+        }
 
+        return false;
+    }
     /**
      * @throws RandomException
      * @throws \Exception
@@ -79,6 +87,31 @@ final class ChipperSecurity extends SormService
     {
         self::$settings = Sorm::loadSettings();
 
+        $allEncrypted = true;
+
+        if (isset(self::$settings['database'])) {
+            foreach (['host', 'name', 'user', 'password', 'port'] as $field) {
+                if (!self::verifyEncrypted(self::$settings['database'][$field])) {
+                    $allEncrypted = false;
+                    break;
+                }
+            }
+        }
+
+        if (isset(self::$settings['paymmentMethods'])) {
+            foreach (['host', 'name', 'user', 'password', 'port'] as $field) {
+                if (!self::verifyEncrypted(self::$settings['paymmentMethods'][$field])) {
+                    $allEncrypted = false;
+                    break;
+                }
+            }
+        }
+
+        if ($allEncrypted) {
+            self::decryptDb();
+        }
+
+        // Шифруем данные
         if (isset(self::$settings['database'])) {
             self::$settings['database']['host']     = self::encrypt(self::$settings['database']['host']);
             self::$settings['database']['name']     = self::encrypt(self::$settings['database']['name']);
@@ -86,7 +119,6 @@ final class ChipperSecurity extends SormService
             self::$settings['database']['password'] = self::encrypt(self::$settings['database']['password']);
             self::$settings['database']['port']     = self::encrypt(self::$settings['database']['port']);
         }
-
 
         if (isset(self::$settings['paymmentMethods'])) {
             self::$settings['paymmentMethods']['host']     = self::encrypt(self::$settings['paymmentMethods']['host']);
@@ -96,8 +128,10 @@ final class ChipperSecurity extends SormService
             self::$settings['paymmentMethods']['port']     = self::encrypt(self::$settings['paymmentMethods']['port']);
         }
 
+        // Сохраняем зашифрованные настройки
         Sorm::saveSettings(self::$settings);
     }
+
     public static function decryptDb(): array
     {
         self::$settings = Sorm::loadSettings();
