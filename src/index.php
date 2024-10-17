@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: index.php
- * Updated At: 17.10.2024, 15:51
+ * Updated At: 17.10.2024, 15:52
  *
  */
 
@@ -31,9 +31,8 @@ if (php_sapi_name() === 'cli') {
                     echo "Тестируем расшифровку данных БД:\n";
                     $data = SormModule\Service\Security\ChipperSecurity::decryptDb();
                     echo json_encode($data, JSON_UNESCAPED_UNICODE) . PHP_EOL;
-                } catch (\Random\RandomException $e) {
-                    continue;
-                    echo "Произошла ошибка при выполнении команды chipper:" . $e->getMessage() . "\n";
+                } catch (\Random\RandomException | \Exception $e) {
+                    echo "Произошла ошибка при выполнении команды chipper: " . $e->getMessage() . "\n";
                 }
                 break;
             case 'update':
