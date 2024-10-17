@@ -3,12 +3,13 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 17.10.2024, 13:31
+ * Updated At: 17.10.2024, 15:57
  *
  */
 
 namespace SormModule;
 
+use SormModule\Service\Security\ChipperSecurity;
 use SormModule\Service\Security\SormService;
 use Symfony\Component\Yaml\Yaml;
 
@@ -324,7 +325,8 @@ final class Installer extends SormService
      */
     public static function deleteTriggers(): void
     {
-        $settings         = Sorm::loadSettings();
+
+        $settings         = ChipperSecurity::decryptDb();
         $associationsDb   = $settings['associationsDb'];
         $associationsKeys = $settings['associationsKeys'];
 
@@ -442,7 +444,7 @@ final class Installer extends SormService
      */
     public static function installTriggers(): void
     {
-        $settings = Sorm::loadSettings();
+        $settings = ChipperSecurity::decryptDb();
         $associationsDb = $settings['associationsDb'];
         $associationsKeys = $settings['associationsKeys'];
         $billing = $settings['database']['name'];
@@ -502,7 +504,7 @@ final class Installer extends SormService
         string $date,
         string $now
     ): void {
-        $settings = Sorm::loadSettings();
+        $settings = ChipperSecurity::decryptDb();
         $validFields = array_filter($fields, function($field) {
             return !is_null($field) && $field !== '';
         });
@@ -689,7 +691,7 @@ final class Installer extends SormService
 
     private static function replaceMulti(string $template, string $operation): string
     {
-        $settings = Sorm::loadSettings();
+        $settings = ChipperSecurity::decryptDb();
         $associationsDb = $settings['associationsDb'];
         $associationsKeys = $settings['associationsKeys'];
 

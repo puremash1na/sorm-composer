@@ -3,13 +3,14 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ExportData.php
- * Updated At: 17.10.2024, 13:31
+ * Updated At: 17.10.2024, 15:57
  *
  */
 
 namespace SormModule\Service;
 
 use PDO;
+use SormModule\Service\Security\ChipperSecurity;
 use SormModule\Service\Security\SormService;
 use SormModule\Sorm;
 
@@ -24,7 +25,7 @@ final class ExportData extends SormService
      */
     public function __construct()
     {
-        self::$settings = Sorm::loadSettings();
+        self::$settings = ChipperSecurity::decryptDb();
         self::$db = Sorm::initDatabase();
         if (!empty(self::$settings) && !empty(self::$db)) {
             self::$batchSize = 100;
