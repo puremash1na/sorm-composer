@@ -1,4 +1,11 @@
 <?php
+/*
+ * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
+ * Author: epilepticmane
+ * File: index.php
+ * Updated At: 17.10.2024, 13:44
+ *
+ */
 
 require __DIR__ . '/../vendor/autoload.php';
 
@@ -15,6 +22,14 @@ if (php_sapi_name() === 'cli') {
         $command = $argv[1];
 
         switch ($command) {
+            case 'chipper':
+                echo "Обновляем APP_KEY и шифруем данные\n";
+                try {
+                    \SormModule\Service\Security\ChipperSecurity::generateAppKey();
+                } catch (\Random\RandomException $e) {
+                    echo "Произошла ошибка при выполнении команды chipper:" . $e->getMessage() . "\n";
+                }
+                break;
             case 'update':
                 echo "Запуск первичной выгрузки на СОРМ\n";
                 $settings = SormModule\Sorm::loadSettings();

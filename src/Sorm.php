@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Sorm.php
- * Updated At: 17.10.2024, 13:31
+ * Updated At: 17.10.2024, 13:44
  *
  */
 
@@ -42,6 +42,23 @@ final class Sorm extends SormService
         $settingsFilePath = self::$path . '/sorm/settings.yaml'; // Используем путь до корня проекта
         self::$settings = Yaml::parseFile($settingsFilePath);
         return self::$settings;
+    }
+
+    /**
+     * @throws Exception
+     */
+    public static function saveSettings(mixed $settings): void
+    {
+        self::$path = Sorm::findProjectRoot();
+        $settingsFilePath = self::$path . '/sorm/settings.yaml';
+
+        try {
+            $yamlContent = Yaml::dump($settings);
+            file_put_contents($settingsFilePath, $yamlContent);
+            self::$settings = $settings;
+        } catch (Exception $e) {
+            throw new Exception("Ошибка при сохранении настроек: " . $e->getMessage());
+        }
     }
 
     /**
