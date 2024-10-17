@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 17.10.2024, 16:24
+ * Updated At: 17.10.2024, 16:32
  *
  */
 
@@ -76,6 +76,7 @@ final class Installer extends SormService
                 'env'             => 'dev',
                 'APP_KEY'         => '',
                 'CHIPPER_ROUNDS'  => '7',
+                'autoDeleteLogs'  => '1 months',
                 'database'       => [
                     'driver'   => 'mysql',
                     'host'     => 'localhost',
@@ -561,9 +562,14 @@ final class Installer extends SormService
                 $jsonFields = [];
                 foreach ($fields as $key => $value) {
                     if (is_array($value)) {
-                        $jsonFields[] = "'$key', JSON_ARRAY(" . implode(", ", array_map(fn($v) => "NEW.$v", $value)) . ")";
+                        $jsonFields[] = "'$key', JSON_ARRAY(" . implode(", ", array_map(fn($v) => $key !== $fieldString ? "NEW.$fieldString" : "NEW.$v", $value)) . ")";
                     } else {
-                        $jsonFields[] = "'$key', NEW.$value";
+                        // Проверка для одиночных значений
+                        if ($key !== $fieldString) {
+                            $jsonFields[] = "'$fieldString.$key', NEW.$value"; // добавляем $fieldString
+                        } else {
+                            $jsonFields[] = "'$key', NEW.$value"; // оставляем как есть
+                        }
                     }
                 }
                 $jsonDataInfo = "JSON_OBJECT(" . implode(", ", $jsonFields) . ")";
@@ -590,9 +596,13 @@ final class Installer extends SormService
                 $jsonFields = [];
                 foreach ($fields as $key => $value) {
                     if (is_array($value)) {
-                        $jsonFields[] = "'$key', JSON_ARRAY(" . implode(", ", array_map(fn($v) => "OLD.$v", $value)) . ")";
+                        $jsonFields[] = "'$key', JSON_ARRAY(" . implode(", ", array_map(fn($v) => $key !== $fieldString ? "OLD.$fieldString.$v" : "OLD.$v", $value)) . ")";
                     } else {
-                        $jsonFields[] = "'$key', OLD.$value";
+                        if ($key !== $fieldString) {
+                            $jsonFields[] = "'$fieldString.$key', OLD.$value"; // добавляем $fieldString
+                        } else {
+                            $jsonFields[] = "'$key', OLD.$value"; // оставляем как есть
+                        }
                     }
                 }
                 $jsonDataInfo = "JSON_OBJECT(" . implode(", ", $jsonFields) . ")";
@@ -695,13 +705,12 @@ final class Installer extends SormService
                 FILE_APPEND
             );
         } catch (\Exception $e) {
-            echo "Ошибка {$tableName}[$fieldString][$operation] [$triggerName] {$e->getMessage()}\n\n";
             file_put_contents(
                 "{$logDir}/triggers-{$date}.log",
                 "[$now] [Migrations] Ошибка создания триггера для таблицы {$tableName}[$fieldString][$operation] [$triggerName] {$e->getMessage()}\n",
                 FILE_APPEND
             );
-            echo "[Migrations $date - $now] Ошибка создания триггера для таблицы {$tableName}[$fieldString][$operation] [$triggerName] {$e->getMessage()}\n";
+            echo "[Migrations $date - $now $primaryKey] Ошибка создания триггера для таблицы {$tableName}[$fieldString][$operation] [$triggerName] {$e->getMessage()}\n";
         }
     }
 
