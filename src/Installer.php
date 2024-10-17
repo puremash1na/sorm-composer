@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 17.10.2024, 16:32
+ * Updated At: 17.10.2024, 16:36
  *
  */
 
@@ -562,13 +562,13 @@ final class Installer extends SormService
                 $jsonFields = [];
                 foreach ($fields as $key => $value) {
                     if (is_array($value)) {
-                        $jsonFields[] = "'$key', JSON_ARRAY(" . implode(", ", array_map(fn($v) => $key !== $fieldString ? "NEW.$fieldString" : "NEW.$v", $value)) . ")";
+                        $jsonFields[] = "'$key', JSON_ARRAY(" . implode(", ", array_map(fn($v) => $key !== $fieldString ? "NEW.$v" : "NEW.$fieldString", $value)) . ")";
                     } else {
                         // Проверка для одиночных значений
                         if ($key !== $fieldString) {
-                            $jsonFields[] = "'$fieldString.$key', NEW.$value"; // добавляем $fieldString
+                            $jsonFields[] = "'$key', NEW.$value"; // добавляем $fieldString
                         } else {
-                            $jsonFields[] = "'$key', NEW.$value"; // оставляем как есть
+                            $jsonFields[] = "'$fieldString', NEW.$value"; // оставляем как есть
                         }
                     }
                 }
@@ -596,12 +596,12 @@ final class Installer extends SormService
                 $jsonFields = [];
                 foreach ($fields as $key => $value) {
                     if (is_array($value)) {
-                        $jsonFields[] = "'$key', JSON_ARRAY(" . implode(", ", array_map(fn($v) => $key !== $fieldString ? "OLD.$fieldString.$v" : "OLD.$v", $value)) . ")";
+                        $jsonFields[] = "'$key', JSON_ARRAY(" . implode(", ", array_map(fn($v) => $key !== $fieldString ? "OLD.$v" : "OLD.$fieldString", $value)) . ")";
                     } else {
                         if ($key !== $fieldString) {
-                            $jsonFields[] = "'$fieldString.$key', OLD.$value"; // добавляем $fieldString
+                            $jsonFields[] = "'$key', OLD.$value"; // добавляем $fieldString
                         } else {
-                            $jsonFields[] = "'$key', OLD.$value"; // оставляем как есть
+                            $jsonFields[] = "'$fieldString', OLD.$value"; // оставляем как есть
                         }
                     }
                 }
