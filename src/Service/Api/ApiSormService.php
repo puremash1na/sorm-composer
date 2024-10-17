@@ -1,16 +1,18 @@
 <?php
 /*
- * Copyright (c) 2024 - 2024, Webhost1, LLC. All rights reserved.
+ * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSormService.php
- * Updated At: 14.10.2024, 20:42
+ * Updated At: 17.10.2024, 13:31
+ *
  */
 
 namespace SormModule\Service\Api;
 
 use Exception;
+use SormModule\Service\Security\SormService;
 
-final class ApiSormService
+final class ApiSormService extends SormService
 {
     public function __construct() {}
 
@@ -83,18 +85,5 @@ final class ApiSormService
             'httpCode' => $httpCode,
             'response' => $response,
         ];
-    }
-
-    public function __call(string $name, array $arguments): mixed
-    {
-        if (method_exists(__CLASS__, $name)) {
-            return forward_static_call_array([__CLASS__, $name], $arguments);
-        }
-
-        throw new \BadMethodCallException("Method {$name} does not exist");
-    }
-    public static function call(string $method, ?array $arguments = [])
-    {
-        return call_user_func_array([__CLASS__, $method], $arguments);
     }
 }

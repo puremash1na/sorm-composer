@@ -3,15 +3,16 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 16.10.2024, 14:46
+ * Updated At: 17.10.2024, 13:31
  *
  */
 
 namespace SormModule;
 
+use SormModule\Service\Security\SormService;
 use Symfony\Component\Yaml\Yaml;
 
-final class Installer
+final class Installer extends SormService
 {
     /**
      * Ru: Устанавливает модуль SORM, создавая необходимые директории и файлы конфигурации в корне проекта.
@@ -69,9 +70,11 @@ final class Installer
         // Создание settings.yaml, если его не существует
         if (!file_exists($settingsPath)) {
             $defaultSettings = [
-                'appName'        => 'SORM Module',
-                'sormApiUrl'     => 'http://example.com/api',
-                'env'            => 'dev',
+                'appName'         => 'SORM Module',
+                'sormApiUrl'      => 'http://example.com/api',
+                'env'             => 'dev',
+                'APP_KEY'         => '',
+                'CHIPPER_ROUNDS'  => '7',
                 'database'       => [
                     'driver'   => 'mysql',
                     'host'     => 'localhost',
@@ -437,7 +440,8 @@ final class Installer
      * @see Installer::install()
      * @throws \Exception
      */
-    public static function installTriggers(): void {
+    public static function installTriggers(): void
+    {
         $settings = Sorm::loadSettings();
         $associationsDb = $settings['associationsDb'];
         $associationsKeys = $settings['associationsKeys'];
