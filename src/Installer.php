@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 17.10.2024, 17:41
+ * Updated At: 17.10.2024, 17:47
  *
  */
 
@@ -561,16 +561,20 @@ final class Installer extends SormService
             case 'INSERT':
                 $jsonFields = [];
                 foreach ($fields as $key => $value) {
+                    if ($tableName !== 'persons' && $key === 'date') {
+                        continue;
+                    }
+
                     if (is_array($value)) {
                         $jsonFields[] = "'$key', JSON_ARRAY(" . implode(", ", array_map(fn($v) => $key !== $fieldString ? "NEW.$v" : "NEW.$fieldString", $value)) . ")";
                     } else {
                         // Проверка для одиночных значений
                         if ($key !== $fieldString) {
-                            echo "!!! 569: $key, $value\n";
-                            $jsonFields[] = "'$key', NEW.$value"; // добавляем $fieldString
+                            echo "!!! 569: $key, $value\n"; // Отладочная информация
+                            $jsonFields[] = "'$key', NEW.$value"; // Добавляем поле
                         } else {
-                            echo "!!! 572: $fieldString, $value\n";
-                            $jsonFields[] = "'$fieldString', NEW.$value"; // оставляем как есть
+                            echo "!!! 572: $fieldString, $value\n"; // Отладочная информация
+                            $jsonFields[] = "'$fieldString', NEW.$value"; // Оставляем как есть
                         }
                     }
                 }
@@ -599,15 +603,21 @@ final class Installer extends SormService
             case 'DELETE':
                 $jsonFields = [];
                 foreach ($fields as $key => $value) {
+                    // Исключаем поле 'date', если таблица не 'persons'
+                    if ($tableName !== 'persons' && $key === 'date') {
+                        continue; // Пропускаем это поле
+                    }
+
                     if (is_array($value)) {
                         $jsonFields[] = "'$key', JSON_ARRAY(" . implode(", ", array_map(fn($v) => $key !== $fieldString ? "OLD.$v" : "OLD.$fieldString", $value)) . ")";
                     } else {
+                        // Проверка для одиночных значений
                         if ($key !== $fieldString) {
-                            echo "!!! 604: $key, $value\n";
-                            $jsonFields[] = "'$key', OLD.$value"; // добавляем $fieldString
+                            echo "!!! 569: $key, $value\n"; // Отладочная информация
+                            $jsonFields[] = "'$key', OLD.$value"; // Добавляем поле
                         } else {
-                            echo "!!! 607: $fieldString, $value\n";
-                            $jsonFields[] = "'$fieldString', OLD.$value"; // оставляем как есть
+                            echo "!!! 572: $fieldString, $value\n"; // Отладочная информация
+                            $jsonFields[] = "'$fieldString', OLD.$value"; // Оставляем как есть
                         }
                     }
                 }
