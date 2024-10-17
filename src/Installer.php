@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 17.10.2024, 17:59
+ * Updated At: 17.10.2024, 18:01
  *
  */
 
@@ -695,9 +695,6 @@ final class Installer extends SormService
         }
 
         try {
-            if($tableName === 'persons' && $operation === 'DELETE') {
-                echo $sqlCreate;
-            }
             $stmt = $database->prepare($sqlCreate);
             $stmt->execute();
             echo "[Migrations $date - $now] Триггер для таблицы {$tableName}[$fieldString][$operation]: успешно создан.\n";
