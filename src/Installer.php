@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 17.10.2024, 16:04
+ * Updated At: 17.10.2024, 16:08
  *
  */
 
@@ -558,9 +558,7 @@ final class Installer extends SormService
         $sqlCreate = "";
         switch (strtoupper($operation)) {
             case 'INSERT':
-                $json = json_encode($fields);
-                echo "Все поля арр для $operation $tableName $json, $fieldString\n";
-                $jsonDataInfo = "JSON_OBJECT(" . implode(", ", array_map(fn($field) => "'{$field}', NEW.{$field}", $fields)) . ")";
+                $jsonDataInfo = "JSON_OBJECT(NEW.".$fieldString.")";
 
                 $sqlCreate = "
             CREATE TRIGGER {$triggerName} AFTER INSERT ON {$tableName}
@@ -581,10 +579,7 @@ final class Installer extends SormService
             ";
                 break;
             case 'DELETE':
-                $json = json_encode($fields);
-                echo "Все поля арр для $operation $tableName $json, $fieldString\n";
-                $jsonDataInfo = "JSON_OBJECT(" . implode(", ", array_map(fn($field) => "'{$field}', OLD.{$field}", $fields)) . ")";
-
+                $jsonDataInfo = "JSON_OBJECT(OLD.".$fieldString.")";
                 $sqlCreate = "
             CREATE TRIGGER {$triggerName} BEFORE DELETE ON {$tableName}
             FOR EACH ROW
