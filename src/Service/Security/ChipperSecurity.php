@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ChipperSecurity.php
- * Updated At: 17.10.2024, 15:45
+ * Updated At: 17.10.2024, 15:48
  *
  */
 
@@ -41,6 +41,8 @@ final class ChipperSecurity extends SormService
     {
         if (str_starts_with($data, 'enc')) {
             $data = substr($data, 3);
+        } else {
+            return;
         }
 
         $appKey = self::$settings['APP_KEY'];
