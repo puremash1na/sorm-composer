@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSorm.php
- * Updated At: 18.10.2024, 14:45
+ * Updated At: 18.10.2024, 14:51
  *
  */
 
@@ -23,16 +23,11 @@ final class ApiSorm extends SormService
     private static $settings;
     private static $db;
 
-    /**
-     * @throws Exception
-     */
-    public function __construct()
+    public static function transformObject()
     {
         self::$db       = Sorm::initDatabase();         // получили БД
         self::$settings = ChipperSecurity::decryptDb(); // получили настройки
-    }
-    public static function transformObject()
-    {
+
         $associationsDb   = self::$settings['associationsDb'];
         $associationsKeys = self::$settings['associationsKeys'];
         foreach ($associationsDb as $logicalTableName => $dbConfig) {
