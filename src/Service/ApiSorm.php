@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSorm.php
- * Updated At: 18.10.2024, 15:08
+ * Updated At: 18.10.2024, 15:10
  *
  */
 
@@ -43,7 +43,7 @@ final class ApiSorm extends SormService
                 continue;
             }
 
-            echo "Обращаемся к БД: $tableName в СОРМЕ: $dbConfig\n";
+            echo "Обращаемся к БД: $tableName в СОРМЕ: $logicalTableName\n";
 //
 //            try {
 //                $query = "SELECT * FROM `$tableName`";
