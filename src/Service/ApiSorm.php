@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSorm.php
- * Updated At: 18.10.2024, 15:57
+ * Updated At: 18.10.2024, 15:58
  *
  */
 
@@ -132,17 +132,16 @@ final class ApiSorm extends SormService
                             foreach ($keys as $key => $value) {
                                 if (is_array($value)) {
                                     foreach ($value as $subKey) {
-                                        if (isset($row[$subKey]) && $row[$subKey] !== null && $row[$subKey] !== '') {
+                                        if (isset($row[$subKey]) && $row[$subKey] !== '') {
                                             $params[] = $row[$subKey];
                                         }
                                     }
                                 } else {
-                                    if (isset($row[$value]) && $row[$value] !== null && $row[$value] !== '') {
+                                    if (isset($row[$value]) && $row[$value] !== '') {
                                         $params[] = $row[$value];
                                     }
                                 }
                             }
-                            dd($params);
                             $paymentMethodsObjects[] = new PaymentMethod(...$params); // Передаём параметры
                             break;
 
