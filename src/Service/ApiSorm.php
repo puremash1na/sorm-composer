@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSorm.php
- * Updated At: 18.10.2024, 15:59
+ * Updated At: 18.10.2024, 16:00
  *
  */
 
@@ -196,8 +196,9 @@ final class ApiSorm extends SormService
 //                            break;
                     }
                 }
-                $ps = json_encode($paymentMethodsObjects);
-                echo $ps . PHP_EOL;
+                foreach ($paymentMethodsObjects as $paymentMethodsObject) {
+                    echo json_encode($paymentMethodsObject->dataForExport()) . PHP_EOL;
+                }
 
                 // Добавляем задержку
                 sleep(1); // Задержка в 1 секунду
