@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSorm.php
- * Updated At: 18.10.2024, 16:09
+ * Updated At: 18.10.2024, 16:33
  *
  */
 
@@ -27,13 +27,23 @@ final class ApiSorm extends SormService
     /**
      * @throws Exception
      */
-    public static function transformObject()
+    public static function transformObject(): void
     {
-        $settings         = ChipperSecurity::decryptDb();
+        $finish = [
+            'person'          => false,
+            'tariffs'         => false,
+            'tickets'         => false,
+            'payment_methods' => false,
+            'orders'          => false,
+            'operations'      => false,
+            'logs_is'         => false,
+        ];
+
+        $settings = ChipperSecurity::decryptDb();
+
         $associationsDb   = $settings['associationsDb'];
         $associationsKeys = $settings['associationsKeys'];
 
-        // Массивы для хранения объектов
         $logIsObjects          = [];
         $operationsObjects     = [];
         $ordersObjects         = [];
@@ -43,7 +53,7 @@ final class ApiSorm extends SormService
         $ticketsObjects        = [];
 
         foreach ($associationsDb as $logicalTableName => $dbConfig) {
-            $dbType = key($dbConfig);
+            $dbType    = key($dbConfig);
             $tableName = $dbConfig[$dbType];
 
             $dbCreds = $settings[$dbType] ?? null;
@@ -54,134 +64,86 @@ final class ApiSorm extends SormService
             }
 
             $database = Installer::initDatabaseConnection($dbCreds);
+            $keys     = $associationsKeys[$logicalTableName] ?? null;
 
-            $keys = $associationsKeys[$logicalTableName] ?? null;
             if (!$keys) {
                 continue;
             }
 
+            if ($finish[$logicalTableName]) {
+                echo "Таблица $logicalTableName уже обработана.\n";
+                continue;
+            }
+
             echo "Обращаемся к БД: $tableName в СОРМЕ: $logicalTableName\n";
+
             try {
                 $countQuery = "SELECT COUNT(*) FROM `$tableName`";
                 $countStmt = $database->prepare($countQuery);
                 $countStmt->execute();
                 $totalCount = $countStmt->fetchColumn();
+                $batchSize = min($totalCount, 500);
+                $processedCount = 0;
 
-                // Получаем информацию о размере таблицы
-                $sizeQuery = "SHOW TABLE STATUS LIKE '$tableName'";
-                $sizeStmt = $database->prepare($sizeQuery);
-                $sizeStmt->execute();
-                $tableStatus = $sizeStmt->fetch(PDO::FETCH_ASSOC);
-                $dataSizeMB = isset($tableStatus['Data_length']) ? $tableStatus['Data_length'] / (1024 * 1024) : 0;
+                // Обработка данных постранично
+                while ($processedCount < $totalCount) {
+                    $query = "SELECT * FROM `$tableName` LIMIT $batchSize OFFSET $processedCount";
+                    $stmt = $database->prepare($query);
+                    $stmt->execute();
+                    $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-                $query = "SELECT * FROM `$tableName`";
-                $stmt = $database->prepare($query);
-                $stmt->execute();
-                $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                $start = microtime(true);
-
-                foreach ($data as $row) {
-                    switch ($logicalTableName) {
-                        case 'logs_is':
-                            $params = [];
-                            foreach ($keys as $key => $value) {
-                                if (is_array($value)) {
-                                    foreach ($value as $subKey) {
-                                        $params[] = $row[$subKey];
-                                    }
-                                } else {
-                                    $params[] = $row[$value];
-                                }
-                            }
-                            $logIsObjects[] = new LogIs(...$params);
-                            break;
-                        case 'operations':
-                            $params = [];
-                            foreach ($keys as $key => $value) {
-                                if (is_array($value)) {
-                                    foreach ($value as $subKey) {
-                                        $params[] = $row[$subKey];
-                                    }
-                                } else {
-                                    $params[] = $row[$value];
-                                }
-                            }
-                            $operationsObjects[] = new Operation(...$params);
-                            break;
-                        case 'orders':
-                            $params = [];
-                            foreach ($keys as $key => $value) {
-                                if (is_array($value)) {
-                                    foreach ($value as $subKey) {
-                                        $params[] = $row[$subKey];
-                                    }
-                                } else {
-                                    $params[] = $row[$value];
-                                }
-                            }
-                            $ordersObjects[] = new Order(...$params); // Передаём параметры
-                            break;
-                        case 'payment_methods':
-                            $params = [];
-                            foreach ($keys as $key => $value) {
-                                if (is_array($value)) {
-                                    foreach ($value as $subKey) {
-                                        $params[] = $row[$subKey];
-                                    }
-                                } else {
-                                    $params[] = $row[$value];
-                                }
-                            }
-                            $paymentMethodsObjects[] = new PaymentMethod(...$params); // Передаём параметры
-                            break;
-                        case 'person':
-                            $params = [];
-                            foreach ($keys as $key => $value) {
-                                if (is_array($value)) {
-                                    foreach ($value as $subKey) {
-                                        $params[] = $row[$subKey];
-                                    }
-                                } else {
-                                    $params[] = $row[$value];
-                                }
-                            }
-                            $personObjects[] = new Person(...$params); // Передаём параметры
-                            break;
-                        case 'tariffs':
-                            $params = [];
-                            foreach ($keys as $key => $value) {
-                                if (is_array($value)) {
-                                    foreach ($value as $subKey) {
-                                        $params[] = $row[$subKey];
-                                    }
-                                } else {
-                                    $params[] = $row[$value];
-                                }
-                            }
-                            $tariffObjects[] = new Tariff(...$params); // Передаём параметры
-                            break;
-                        case 'tickets':
-                            $params = [];
-                            foreach ($keys as $key => $value) {
-                                if (is_array($value)) {
-                                    foreach ($value as $subKey) {
-                                        $params[] = $row[$subKey];
-                                    }
-                                } else {
-                                    $params[] = $row[$value];
-                                }
-                            }
-                            $ticketsObjects[] = new Ticket(...$params); // Передаём параметры
-                            break;
+                    if (empty($data)) {
+                        break; // Если данных нет, выходим из цикла
                     }
-                 }
-                $end = microtime(true);
-                $executionTime = $end - $start;
-                echo "Время выполнения для таблицы $tableName: Общее количество записей: $totalCount / Общий размер БД (мб): " . number_format($dataSizeMB, 2) . " : " . number_format($executionTime, 4) . " секунд\n";
+
+                    foreach ($data as $row) {
+                        $params = [];
+                        foreach ($keys as $key => $value) {
+                            if (is_array($value)) {
+                                foreach ($value as $subKey) {
+                                    $params[] = $row[$subKey];
+                                }
+                            } else {
+                                $params[] = $row[$value];
+                            }
+                        }
+
+                        switch ($logicalTableName) {
+                            case 'logs_is':
+                                $logIsObjects[] = new LogIs(...$params);
+                                break;
+                            case 'operations':
+                                $operationsObjects[] = new Operation(...$params);
+                                break;
+                            case 'orders':
+                                $ordersObjects[] = new Order(...$params);
+                                break;
+                            case 'payment_methods':
+                                $paymentMethodsObjects[] = new PaymentMethod(...$params);
+                                break;
+                            case 'person':
+                                $personObjects[] = new Person(...$params);
+                                break;
+                            case 'tariffs':
+                                $tariffObjects[] = new Tariff(...$params);
+                                break;
+                            case 'tickets':
+                                $ticketsObjects[] = new Ticket(...$params);
+                                break;
+                        }
+                    }
+
+                    $processedCount += count($data);
+                    echo "Обработано $processedCount из $totalCount для таблицы $tableName.\n";
+                }
+
+                // Помечаем таблицу как полностью обработанную
+                $finish[$logicalTableName] = true;
+                echo "Таблица $logicalTableName полностью обработана.\n";
+
             } catch (\PDOException $e) {
                 echo "[Error] Ошибка выполнения запроса для таблицы $tableName: " . $e->getMessage() . "\n";
             }
         }
     }
-
 }
