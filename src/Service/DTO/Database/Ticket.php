@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Ticket.php
- * Updated At: 18.10.2024, 14:39
+ * Updated At: 18.10.2024, 15:24
  *
  */
 
@@ -22,7 +22,7 @@ final class Ticket
         private ?string $email,
         private ?string $text,
         private ?string $orderName,
-        private bool    $closed
+        private ?bool    $closed
     ) {
 
     }

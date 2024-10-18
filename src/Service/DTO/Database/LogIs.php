@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: LogIs.php
- * Updated At: 18.10.2024, 14:34
+ * Updated At: 18.10.2024, 15:24
  *
  */
 
@@ -16,7 +16,7 @@ final class LogIs
         private ?string $number,
         private ?string $date,
         private ?string $person,
-        private bool    $logged,
+        private ?bool    $logged,
         private ?string $ip,
         private ?string $url
     ){

@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Order.php
- * Updated At: 18.10.2024, 14:35
+ * Updated At: 18.10.2024, 15:24
  *
  */
 
@@ -14,7 +14,7 @@ final class Order
     public function __construct(
         private ?string $id,
         private ?string $number,
-        private string  $date,
+        private ?string  $date,
         private string  $expired,
         private ?string $from,
         private ?string $type,
@@ -27,7 +27,7 @@ final class Order
         private ?string $price,
         private ?string $closed,
         private ?string $reason,
-        private bool    $test
+        private ?bool    $test
     ) {
 
     }

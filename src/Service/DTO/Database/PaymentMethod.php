@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: PaymentMethod.php
- * Updated At: 18.10.2024, 14:35
+ * Updated At: 18.10.2024, 15:24
  *
  */
 
@@ -17,7 +17,7 @@ final class PaymentMethod
         private ?string $type,
         private ?string $name,
         private ?string $aggregatorName,
-        private bool    $visible
+        private ?bool    $visible
     ) {
 
     }
