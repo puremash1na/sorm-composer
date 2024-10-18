@@ -3,13 +3,14 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSorm.php
- * Updated At: 18.10.2024, 15:22
+ * Updated At: 18.10.2024, 15:23
  *
  */
 
 namespace SormModule\Service;
 
 use Exception;
+use PDO;
 use SormModule\Installer;
 use SormModule\Service\DTO\Database\LogIs;
 use SormModule\Service\DTO\Database\Operation;
