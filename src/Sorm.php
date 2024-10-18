@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Sorm.php
- * Updated At: 17.10.2024, 16:00
+ * Updated At: 18.10.2024, 14:45
  *
  */
 
@@ -65,6 +65,7 @@ final class Sorm extends SormService
     /**
      * Инициализация подключения к базе данных
      *
+     * @param string|null $paymentMethod
      * @return PDO|null
      * @throws Exception
      */
@@ -90,41 +91,6 @@ final class Sorm extends SormService
             $data4 = json_encode($e);
             throw new Exception("Error connecting to database: [{$data}] [{$data2}] [{$data3}] [{$data4}");
         }
-    }
-
-    /**
-     * Экспорт данных в SORM API
-     *
-     * @return void
-     */
-    public static function exportToSorm(): void
-    {
-        $sormApiUrl = self::$settings['sormApiUrl'];
-        $query = self::$db->query('SELECT * FROM some_table'); // Пример запроса
-
-        $data = $query->fetchAll(PDO::FETCH_ASSOC);
-        self::sendDataToSorm($sormApiUrl, $data);
-    }
-
-    /**
-     * Отправка данных в SORM API
-     *
-     * @param $url
-     * @param $data
-     * @return void
-     */
-    public static function sendDataToSorm($url, $data): void
-    {
-        $ch = curl_init($url);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-        curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
-        curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-
-        $response = curl_exec($ch);
-        curl_close($ch);
-
-        self::log('Данные отправлены в SORM API.', ['response' => $response]);
     }
 
     /**

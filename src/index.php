@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: index.php
- * Updated At: 17.10.2024, 15:52
+ * Updated At: 18.10.2024, 14:45
  *
  */
 
@@ -37,9 +37,7 @@ if (php_sapi_name() === 'cli') {
                 break;
             case 'update':
                 echo "Запуск первичной выгрузки на СОРМ\n";
-                $settings = SormModule\Sorm::loadSettings();
-                $settins = \json_encode($settings,true);
-                echo "Параметры settings: $settins\n";
+                \SormModule\Service\ApiSorm::transformObject();
                 break;
             case 'cron':
                 echo "Запуск выгрузка данных на СОРМ, CRON";

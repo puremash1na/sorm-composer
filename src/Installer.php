@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Installer.php
- * Updated At: 17.10.2024, 18:01
+ * Updated At: 18.10.2024, 14:45
  *
  */
 
@@ -764,7 +764,7 @@ final class Installer extends SormService
      * @param array $dbCreds
      * @return \PDO|null
      */
-    private static function initDatabaseConnection(array $dbCreds): ?\PDO
+    public static function initDatabaseConnection(array $dbCreds): ?\PDO
     {
         $dsn = "mysql:host={$dbCreds['host']};port={$dbCreds['port']};dbname={$dbCreds['name']}";
         try {

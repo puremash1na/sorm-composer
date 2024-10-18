@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSormService.php
- * Updated At: 17.10.2024, 13:31
+ * Updated At: 18.10.2024, 14:45
  *
  */
 
@@ -15,7 +15,10 @@ use SormModule\Service\Security\SormService;
 final class ApiSormService extends SormService
 {
     public function __construct() {}
-
+    public static function queryApi() {}
+    public static function downloadApi() {}
+    public static function metricApi() {}
+    public static function exportToSorm() {}
     /**
      * @throws Exception
      */
