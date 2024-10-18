@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSorm.php
- * Updated At: 18.10.2024, 16:00
+ * Updated At: 18.10.2024, 16:05
  *
  */
 
@@ -66,9 +66,7 @@ final class ApiSorm extends SormService
                 $stmt = $database->prepare($query);
                 $stmt->execute();
                 $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
-
-                // Ограничиваем количество элементов для обработки
-                $data = array_slice($data, 0, 100);
+                $start = microtime(true);
                 $totalCount = count($data);
 
                 foreach ($data as $row) {
@@ -78,55 +76,40 @@ final class ApiSorm extends SormService
                             foreach ($keys as $key => $value) {
                                 if (is_array($value)) {
                                     foreach ($value as $subKey) {
-                                        if (isset($row[$subKey]) && $row[$subKey] !== null && $row[$subKey] !== '') {
-                                            $params[] = $row[$subKey];
-                                        }
+                                        $params[] = $row[$subKey];
                                     }
                                 } else {
-                                    if (isset($row[$value]) && $row[$value] !== null && $row[$value] !== '') {
-                                        $params[] = $row[$value];
-                                    }
+                                    $params[] = $row[$value];
                                 }
                             }
-                            $logIsObjects[] = new LogIs(...$params); // Передаём параметры
+                            $logIsObjects[] = new LogIs(...$params);
                             break;
-
-//                        case 'operations':
-//                            $params = [];
-//                            foreach ($keys as $key => $value) {
-//                                if (is_array($value)) {
-//                                    foreach ($value as $subKey) {
-//                                        if (isset($row[$subKey]) && $row[$subKey] !== null && $row[$subKey] !== '') {
-//                                            $params[] = $row[$subKey];
-//                                        }
-//                                    }
-//                                } else {
-//                                    if (isset($row[$value]) && $row[$value] !== null && $row[$value] !== '') {
-//                                        $params[] = $row[$value];
-//                                    }
-//                                }
-//                            }
-//                            $operationsObjects[] = new Operation(...$params); // Передаём параметры
-//                            break;
-//
-//                        case 'orders':
-//                            $params = [];
-//                            foreach ($keys as $key => $value) {
-//                                if (is_array($value)) {
-//                                    foreach ($value as $subKey) {
-//                                        if (isset($row[$subKey]) && $row[$subKey] !== null && $row[$subKey] !== '') {
-//                                            $params[] = $row[$subKey];
-//                                        }
-//                                    }
-//                                } else {
-//                                    if (isset($row[$value]) && $row[$value] !== null && $row[$value] !== '') {
-//                                        $params[] = $row[$value];
-//                                    }
-//                                }
-//                            }
-//                            $ordersObjects[] = new Order(...$params); // Передаём параметры
-//                            break;
-
+                        case 'operations':
+                            $params = [];
+                            foreach ($keys as $key => $value) {
+                                if (is_array($value)) {
+                                    foreach ($value as $subKey) {
+                                        $params[] = $row[$subKey];
+                                    }
+                                } else {
+                                    $params[] = $row[$value];
+                                }
+                            }
+                            $operationsObjects[] = new Operation(...$params);
+                            break;
+                        case 'orders':
+                            $params = [];
+                            foreach ($keys as $key => $value) {
+                                if (is_array($value)) {
+                                    foreach ($value as $subKey) {
+                                        $params[] = $row[$subKey];
+                                    }
+                                } else {
+                                    $params[] = $row[$value];
+                                }
+                            }
+                            $ordersObjects[] = new Order(...$params); // Передаём параметры
+                            break;
                         case 'payment_methods':
                             $params = [];
                             foreach ($keys as $key => $value) {
@@ -140,68 +123,50 @@ final class ApiSorm extends SormService
                             }
                             $paymentMethodsObjects[] = new PaymentMethod(...$params); // Передаём параметры
                             break;
-
-//                        case 'person':
-//                            $params = [];
-//                            foreach ($keys as $key => $value) {
-//                                if (is_array($value)) {
-//                                    foreach ($value as $subKey) {
-//                                        if (isset($row[$subKey]) && $row[$subKey] !== null && $row[$subKey] !== '') {
-//                                            $params[] = $row[$subKey];
-//                                        }
-//                                    }
-//                                } else {
-//                                    if (isset($row[$value]) && $row[$value] !== null && $row[$value] !== '') {
-//                                        $params[] = $row[$value];
-//                                    }
-//                                }
-//                            }
-//                            $personObjects[] = new Person(...$params); // Передаём параметры
-//                            break;
-//
-//                        case 'tariffs':
-//                            $params = [];
-//                            foreach ($keys as $key => $value) {
-//                                if (is_array($value)) {
-//                                    foreach ($value as $subKey) {
-//                                        if (isset($row[$subKey]) && $row[$subKey] !== null && $row[$subKey] !== '') {
-//                                            $params[] = $row[$subKey];
-//                                        }
-//                                    }
-//                                } else {
-//                                    if (isset($row[$value]) && $row[$value] !== null && $row[$value] !== '') {
-//                                        $params[] = $row[$value];
-//                                    }
-//                                }
-//                            }
-//                            $tariffObjects[] = new Tariff(...$params); // Передаём параметры
-//                            break;
-//
-//                        case 'tickets':
-//                            $params = [];
-//                            foreach ($keys as $key => $value) {
-//                                if (is_array($value)) {
-//                                    foreach ($value as $subKey) {
-//                                        if (isset($row[$subKey]) && $row[$subKey] !== null && $row[$subKey] !== '') {
-//                                            $params[] = $row[$subKey];
-//                                        }
-//                                    }
-//                                } else {
-//                                    if (isset($row[$value]) && $row[$value] !== null && $row[$value] !== '') {
-//                                        $params[] = $row[$value];
-//                                    }
-//                                }
-//                            }
-//                            $ticketsObjects[] = new Ticket(...$params); // Передаём параметры
-//                            break;
+                        case 'person':
+                            $params = [];
+                            foreach ($keys as $key => $value) {
+                                if (is_array($value)) {
+                                    foreach ($value as $subKey) {
+                                        $params[] = $row[$subKey];
+                                    }
+                                } else {
+                                    $params[] = $row[$value];
+                                }
+                            }
+                            $personObjects[] = new Person(...$params); // Передаём параметры
+                            break;
+                        case 'tariffs':
+                            $params = [];
+                            foreach ($keys as $key => $value) {
+                                if (is_array($value)) {
+                                    foreach ($value as $subKey) {
+                                        $params[] = $row[$subKey];
+                                    }
+                                } else {
+                                    $params[] = $row[$value];
+                                }
+                            }
+                            $tariffObjects[] = new Tariff(...$params); // Передаём параметры
+                            break;
+                        case 'tickets':
+                            $params = [];
+                            foreach ($keys as $key => $value) {
+                                if (is_array($value)) {
+                                    foreach ($value as $subKey) {
+                                        $params[] = $row[$subKey];
+                                    }
+                                } else {
+                                    $params[] = $row[$value];
+                                }
+                            }
+                            $ticketsObjects[] = new Ticket(...$params); // Передаём параметры
+                            break;
                     }
-                }
-                foreach ($paymentMethodsObjects as $paymentMethodsObject) {
-                    echo json_encode($paymentMethodsObject->dataForExport()) . PHP_EOL;
-                }
-
-                // Добавляем задержку
-                sleep(1); // Задержка в 1 секунду
+                 }
+                $end = microtime(true);
+                $executionTime = $end - $start;
+                echo "Время выполнения для таблицы $tableName: " . number_format($executionTime, 4) . " секунд\n";
             } catch (\PDOException $e) {
                 echo "[Error] Ошибка выполнения запроса для таблицы $tableName: " . $e->getMessage() . "\n";
             }
