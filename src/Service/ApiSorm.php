@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSorm.php
- * Updated At: 18.10.2024, 16:33
+ * Updated At: 18.10.2024, 16:37
  *
  */
 
@@ -29,6 +29,10 @@ final class ApiSorm extends SormService
      */
     public static function transformObject(): void
     {
+        // Начало отслеживания времени
+        $startTime = microtime(true);
+        $startMemory = memory_get_usage();
+
         $finish = [
             'person'          => false,
             'tariffs'         => false,
@@ -79,13 +83,13 @@ final class ApiSorm extends SormService
 
             try {
                 $countQuery = "SELECT COUNT(*) FROM `$tableName`";
-                $countStmt = $database->prepare($countQuery);
+                $countStmt  = $database->prepare($countQuery);
                 $countStmt->execute();
-                $totalCount = $countStmt->fetchColumn();
-                $batchSize = min($totalCount, 500);
+
+                $totalCount     = $countStmt->fetchColumn();
+                $batchSize      = min($totalCount, $settings['exportStep']);
                 $processedCount = 0;
 
-                // Обработка данных постранично
                 while ($processedCount < $totalCount) {
                     $query = "SELECT * FROM `$tableName` LIMIT $batchSize OFFSET $processedCount";
                     $stmt = $database->prepare($query);
@@ -93,7 +97,7 @@ final class ApiSorm extends SormService
                     $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
                     if (empty($data)) {
-                        break; // Если данных нет, выходим из цикла
+                        break;
                     }
 
                     foreach ($data as $row) {
@@ -136,8 +140,6 @@ final class ApiSorm extends SormService
                     $processedCount += count($data);
                     echo "Обработано $processedCount из $totalCount для таблицы $tableName.\n";
                 }
-
-                // Помечаем таблицу как полностью обработанную
                 $finish[$logicalTableName] = true;
                 echo "Таблица $logicalTableName полностью обработана.\n";
 
@@ -145,5 +147,14 @@ final class ApiSorm extends SormService
                 echo "[Error] Ошибка выполнения запроса для таблицы $tableName: " . $e->getMessage() . "\n";
             }
         }
+
+        $endTime   = microtime(true);
+        $endMemory = memory_get_usage();
+
+        $executionTime = $endTime - $startTime;
+        $memoryUsage   = $endMemory - $startMemory;
+
+        echo "Общее время выполнения скрипта: " . number_format($executionTime, 2) . " секунд\n";
+        echo "Общее использование памяти: " . round($memoryUsage / 1024, 2) . " КБ\n";
     }
 }
