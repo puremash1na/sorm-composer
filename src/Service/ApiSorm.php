@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSorm.php
- * Updated At: 18.10.2024, 14:57
+ * Updated At: 18.10.2024, 15:01
  *
  */
 
@@ -45,33 +45,23 @@ final class ApiSorm extends SormService
 
             echo "Обращаемся к БД: $tableName\n";
 
-            $query = "SELECT COUNT(*) as total FROM `$tableName`";
-            $result = $database->prepare($query);
+            // Выполнение запроса для получения общего количества элементов
+            try {
+                $query = "SELECT COUNT(*) FROM `$tableName`";
+                $stmt = $database->prepare($query);
+                $stmt->execute();
+                $count = $stmt->fetchColumn();
 
-            if ($result) {
-                $count = $result->fetchColumn();
-                echo "Общее количество элементов в $tableName: $count\n";
-            } else {
-                echo "[Error] Не удалось выполнить запрос для таблицы $tableName.\n";
+                if ($count !== false) {
+                    echo "Общее количество элементов в $tableName: $count\n";
+                } else {
+                    echo "[Error] Не удалось получить количество элементов для таблицы $tableName.\n";
+                }
+            } catch (\PDOException $e) {
+                echo "[Error] Ошибка выполнения запроса для таблицы $tableName: " . $e->getMessage() . "\n";
             }
-
-            // Закомментированный код для обращения к ключам, если потребуется
-//        foreach ($keys as $key => $value) {
-//            if (is_array($value)) {
-//                foreach ($value as $subKey) {
-//                    if ($subKey === null || $subKey === '') {
-//                        continue;
-//                    }
-//                    echo "63: Обращаемся к $tableName.$subKey\n";
-//                }
-//            } else {
-//                if ($value === null || $value === '') {
-//                    continue;
-//                }
-//                echo "69: Обращаемся к $tableName.$value\n";
-//            }
-//        }
         }
     }
+
 
 }
