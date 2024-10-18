@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSorm.php
- * Updated At: 18.10.2024, 16:05
+ * Updated At: 18.10.2024, 16:09
  *
  */
 
@@ -62,12 +62,23 @@ final class ApiSorm extends SormService
 
             echo "Обращаемся к БД: $tableName в СОРМЕ: $logicalTableName\n";
             try {
+                $countQuery = "SELECT COUNT(*) FROM `$tableName`";
+                $countStmt = $database->prepare($countQuery);
+                $countStmt->execute();
+                $totalCount = $countStmt->fetchColumn();
+
+                // Получаем информацию о размере таблицы
+                $sizeQuery = "SHOW TABLE STATUS LIKE '$tableName'";
+                $sizeStmt = $database->prepare($sizeQuery);
+                $sizeStmt->execute();
+                $tableStatus = $sizeStmt->fetch(PDO::FETCH_ASSOC);
+                $dataSizeMB = isset($tableStatus['Data_length']) ? $tableStatus['Data_length'] / (1024 * 1024) : 0;
+
                 $query = "SELECT * FROM `$tableName`";
                 $stmt = $database->prepare($query);
                 $stmt->execute();
                 $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
                 $start = microtime(true);
-                $totalCount = count($data);
 
                 foreach ($data as $row) {
                     switch ($logicalTableName) {
@@ -166,7 +177,7 @@ final class ApiSorm extends SormService
                  }
                 $end = microtime(true);
                 $executionTime = $end - $start;
-                echo "Время выполнения для таблицы $tableName: " . number_format($executionTime, 4) . " секунд\n";
+                echo "Время выполнения для таблицы $tableName: Общее количество записей: $totalCount / Общий размер БД (мб): " . number_format($dataSizeMB, 2) . " : " . number_format($executionTime, 4) . " секунд\n";
             } catch (\PDOException $e) {
                 echo "[Error] Ошибка выполнения запроса для таблицы $tableName: " . $e->getMessage() . "\n";
             }
