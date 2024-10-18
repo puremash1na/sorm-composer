@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSorm.php
- * Updated At: 18.10.2024, 15:01
+ * Updated At: 18.10.2024, 15:07
  *
  */
 
@@ -43,25 +43,34 @@ final class ApiSorm extends SormService
                 continue;
             }
 
-            echo "Обращаемся к БД: $tableName\n";
-
-            // Выполнение запроса для получения общего количества элементов
-            try {
-                $query = "SELECT COUNT(*) FROM `$tableName`";
-                $stmt = $database->prepare($query);
-                $stmt->execute();
-                $count = $stmt->fetchColumn();
-
-                if ($count !== false) {
-                    echo "Общее количество элементов в $tableName: $count\n";
-                } else {
-                    echo "[Error] Не удалось получить количество элементов для таблицы $tableName.\n";
-                }
-            } catch (\PDOException $e) {
-                echo "[Error] Ошибка выполнения запроса для таблицы $tableName: " . $e->getMessage() . "\n";
-            }
+            echo "Обращаемся к БД: $tableName в СОРМЕ: $dbType\n";
+//
+//            try {
+//                $query = "SELECT * FROM `$tableName`";
+//                $stmt = $database->prepare($query);
+//                $stmt->execute();
+//                $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
+//
+//                $batchSize = 100;
+//                $totalCount = count($data);
+//                for ($i = 0; $i < $totalCount; $i += $batchSize) {
+//                    $batch = array_slice($data, $i, $batchSize);
+//
+//                    // Здесь отправляем пакет на API
+//                    $response = self::sendToApi($batch);
+//
+//                    if (!$response) {
+//                        echo "[Error] Ошибка при отправке данных на API.\n";
+//                    } else {
+//                        echo "Отправлено " . count($batch) . " элементов на API.\n";
+//                    }
+//
+//                    // Добавляем задержку
+//                    sleep(1); // Задержка в 1 секунду (можно настроить по необходимости)
+//                }
+//            } catch (\PDOException $e) {
+//                echo "[Error] Ошибка выполнения запроса для таблицы $tableName: " . $e->getMessage() . "\n";
+//            }
         }
     }
-
-
 }
