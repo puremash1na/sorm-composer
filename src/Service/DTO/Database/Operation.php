@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Operation.php
- * Updated At: 18.10.2024, 14:35
+ * Updated At: 18.10.2024, 15:48
  *
  */
 
@@ -12,7 +12,6 @@ namespace SormModule\Service\DTO\Database;
 final class Operation
 {
     public function __construct(
-        private ?string $id,
         private ?string $number,
         private ?string $person,
         private ?string $type,
@@ -32,7 +31,6 @@ final class Operation
     public function dataForExport(): array
     {
         return [
-            'id'           => $this->id,
             'number'       => $this->number,
             'person'       => $this->person,
             'type'         => $this->type,

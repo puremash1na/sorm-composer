@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Ticket.php
- * Updated At: 18.10.2024, 15:24
+ * Updated At: 18.10.2024, 15:48
  *
  */
 
@@ -12,7 +12,6 @@ namespace SormModule\Service\DTO\Database;
 final class Ticket
 {
     public function __construct(
-        private ?string $id,
         private ?string $number,
         private ?string $parent,
         private ?string $date,
@@ -29,7 +28,6 @@ final class Ticket
     public function dataForExport(): array
     {
         return [
-            'id'         => $this->id,
             'number'     => $this->number,
             'parent'     => $this->parent,
             'date'       => $this->date,

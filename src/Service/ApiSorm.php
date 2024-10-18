@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSorm.php
- * Updated At: 18.10.2024, 15:46
+ * Updated At: 18.10.2024, 15:48
  *
  */
 
@@ -88,7 +88,6 @@ final class ApiSorm extends SormService
                                     }
                                 }
                             }
-                            dd($params);
                             $logIsObjects[] = new LogIs(...$params); // Передаём параметры
                             break;
 

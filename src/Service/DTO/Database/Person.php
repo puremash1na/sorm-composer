@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Person.php
- * Updated At: 18.10.2024, 14:37
+ * Updated At: 18.10.2024, 15:48
  *
  */
 
@@ -12,7 +12,6 @@ namespace SormModule\Service\DTO\Database;
 final class Person
 {
     public function __construct(
-        private ?string $id,
         private ?string $login,
         private ?string $email,
         private ?string $regDate,
@@ -43,7 +42,6 @@ final class Person
     public function dataForExport(): array
     {
         return [
-            'id'             => $this->id,
             'login'          => $this->login,
             'email'          => $this->email,
             'reg_date'       => $this->regDate,
