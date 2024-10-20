@@ -13,7 +13,7 @@ final class Order
 {
     public function __construct(
         private ?string $number,
-        private ?string  $date,
+        private ?string $date,
         private string  $expired,
         private ?string $from,
         private ?string $type,
@@ -26,7 +26,7 @@ final class Order
         private ?string $price,
         private ?string $closed,
         private ?string $reason,
-        private ?bool    $test
+        private ?bool   $test
     ) {
 
     }
