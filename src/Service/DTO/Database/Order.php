@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Order.php
- * Updated At: 21.10.2024, 16:33
+ * Updated At: 21.10.2024, 16:40
  *
  */
 
@@ -56,6 +56,9 @@ final class Order
     }
     private function checkData(mixed $data): string
     {
+        if(mb_strlen($data) === 0) {
+            return json_encode([]);
+        }
         if (is_array($data)) {
             return json_encode($data);
         }
