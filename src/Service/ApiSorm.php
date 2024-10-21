@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSorm.php
- * Updated At: 21.10.2024, 12:40
+ * Updated At: 21.10.2024, 13:24
  *
  */
 
@@ -109,28 +109,34 @@ final class ApiSorm extends SormService
 
                         switch ($logicalTableName) {
                             case 'logs_is':
-                                $objects[$logicalTableName][] = new LogIs(...$params);
+                                $object = new LogIs(...$params);
                                 break;
                             case 'operations':
-                                $objects[$logicalTableName][] = new Operation(...$params);
+                                $object = new Operation(...$params);
                                 break;
                             case 'orders':
-                                $objects[$logicalTableName][] = new Order(...$params);
+                                $object = new Order(...$params);
                                 break;
                             case 'payment_methods':
-                                $objects[$logicalTableName][] = new PaymentMethod(...$params);
+                                $object = new PaymentMethod(...$params);
                                 break;
                             case 'person':
-                                $objects[$logicalTableName][] = new Person(...$params);
+                                $object = new Person(...$params);
                                 break;
                             case 'tariffs':
-                                $objects[$logicalTableName][] = new Tariff(...$params);
+                                $object = new Tariff(...$params);
                                 break;
                             case 'tickets':
-                                $objects[$logicalTableName][] = new Ticket(...$params);
+                                $object = new Ticket(...$params);
                                 break;
                         }
+
+                        // Вызываем метод exportData и добавляем в массив объектов
+                        if (isset($object)) {
+                            $objects[$logicalTableName][] = $object->dataForExport();
+                        }
                     }
+
 
                     $processedCount += count($data);
                     echo "Обработано $processedCount из $totalCount для таблицы $tableName.\n";
@@ -138,7 +144,7 @@ final class ApiSorm extends SormService
                 $finish[$logicalTableName] = true;
                 echo "Таблица $logicalTableName полностью обработана.\n";
                 echo $settings['sormApiUrl']." --- ".$settings['APP_KEY'].PHP_EOL;
-                ApiSormService::exportToSorm($settings['sormApiUrl'],$settings['APP_KEY'],$objects[$logicalTableName]);
+                ApiSormService::exportToSorm($settings['sormApiUrl'], $settings['APP_KEY'], $objects[$logicalTableName]);
             } catch (\PDOException $e) {
                 echo "[Error] Ошибка выполнения запроса для таблицы $tableName: " . $e->getMessage() . "\n";
             }
