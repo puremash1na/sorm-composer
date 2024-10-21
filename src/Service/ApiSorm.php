@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSorm.php
- * Updated At: 21.10.2024, 13:24
+ * Updated At: 21.10.2024, 13:26
  *
  */
 
@@ -131,23 +131,23 @@ final class ApiSorm extends SormService
                                 break;
                         }
 
-                        // Вызываем метод exportData и добавляем в массив объектов
+                        // Теперь сразу отправляем данные на API
                         if (isset($object)) {
-                            $objects[$logicalTableName][] = $object->dataForExport();
+                            $exportData = $object->dataForExport(); // или $object->dataForExport();
+                            ApiSormService::exportToSorm($settings['sormApiUrl'], $settings['APP_KEY'], $exportData);
+                            echo "Объект для таблицы $logicalTableName отправлен на API.\n";
                         }
                     }
-
 
                     $processedCount += count($data);
                     echo "Обработано $processedCount из $totalCount для таблицы $tableName.\n";
                 }
                 $finish[$logicalTableName] = true;
                 echo "Таблица $logicalTableName полностью обработана.\n";
-                echo $settings['sormApiUrl']." --- ".$settings['APP_KEY'].PHP_EOL;
-                ApiSormService::exportToSorm($settings['sormApiUrl'], $settings['APP_KEY'], $objects[$logicalTableName]);
             } catch (\PDOException $e) {
                 echo "[Error] Ошибка выполнения запроса для таблицы $tableName: " . $e->getMessage() . "\n";
             }
+
         }
 
         $endTime   = microtime(true);
