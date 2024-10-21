@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSorm.php
- * Updated At: 21.10.2024, 21:50
+ * Updated At: 21.10.2024, 21:58
  *
  */
 
@@ -53,7 +53,9 @@ final class ApiSorm extends SormService
             $dbType    = key($dbConfig); // database or paymentMethods
             $tableName = $dbConfig[$dbType]; // logs
             $dbCreds = $settings[$dbType] ?? null;
-
+            if($tableName === 'tickets' || $tableName === 'person') {
+                continue;
+            }
             if (!$dbCreds) {
                 echo "[Error] Креды для базы данных {$dbType} не найдены.\n";
                 continue;
@@ -95,7 +97,6 @@ final class ApiSorm extends SormService
                         }
                     }
                     $query = "SELECT " . implode(', ', $selectedFields) . " FROM `$tableName` LIMIT $batchSize OFFSET $processedCount";
-                    echo "[98 $tableName] $query\n";
                     $stmt = $database->prepare($query);
                     $stmt->execute();
                     $data = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -117,8 +118,20 @@ final class ApiSorm extends SormService
                         }
 
                         switch ($logicalTableName) {
+                            case 'logs_is':
+                                $object = new LogIs(...$params);
+                                break;
+                            case 'operations':
+                                $object = new Operation(...$params);
+                                break;
                             case 'orders':
                                 $object = new Order(...$params);
+                                break;
+                            case 'payment_methods':
+                                $object = new PaymentMethod(...$params);
+                                break;
+                            case 'tariffs':
+                                $object = new Tariff(...$params);
                                 break;
                         }
 
