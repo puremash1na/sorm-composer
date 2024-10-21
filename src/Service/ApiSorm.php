@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSorm.php
- * Updated At: 21.10.2024, 16:33
+ * Updated At: 21.10.2024, 16:38
  *
  */
 
@@ -108,14 +108,12 @@ final class ApiSorm extends SormService
                             case 'orders':
                                 $object = new Order(...$params);
                                 break;
-                            case 'tariffs':
-                                $object = new Tariff(...$params);
-                                break;
                         }
 
                         // Теперь сразу отправляем данные на API
                         if (isset($object)) {
                             $exportData = $object->dataForExport(); // или $object->dataForExport();
+                            $object = null;
                             ApiSormService::exportToSorm($settings['sormApiUrl'], $settings['APP_KEY'], $exportData);
                             echo "Объект для таблицы $logicalTableName отправлен на API.\n";
                         }
