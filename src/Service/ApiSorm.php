@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSorm.php
- * Updated At: 21.10.2024, 12:07
+ * Updated At: 21.10.2024, 12:40
  *
  */
 
@@ -49,13 +49,7 @@ final class ApiSorm extends SormService
         $associationsDb   = $settings['associationsDb'];
         $associationsKeys = $settings['associationsKeys'];
 
-        $logIsObjects          = [];
-        $operationsObjects     = [];
-        $ordersObjects         = [];
-        $paymentMethodsObjects = [];
-        $personObjects         = [];
-        $tariffObjects         = [];
-        $ticketsObjects        = [];
+        $objects = [];
 
         foreach ($associationsDb as $logicalTableName => $dbConfig) {
             $dbType    = key($dbConfig);
@@ -115,25 +109,25 @@ final class ApiSorm extends SormService
 
                         switch ($logicalTableName) {
                             case 'logs_is':
-                                $logIsObjects[] = new LogIs(...$params);
+                                $objects[$logicalTableName][] = new LogIs(...$params);
                                 break;
                             case 'operations':
-                                $operationsObjects[] = new Operation(...$params);
+                                $objects[$logicalTableName][] = new Operation(...$params);
                                 break;
                             case 'orders':
-                                $ordersObjects[] = new Order(...$params);
+                                $objects[$logicalTableName][] = new Order(...$params);
                                 break;
                             case 'payment_methods':
-                                $paymentMethodsObjects[] = new PaymentMethod(...$params);
+                                $objects[$logicalTableName][] = new PaymentMethod(...$params);
                                 break;
                             case 'person':
-                                $personObjects[] = new Person(...$params);
+                                $objects[$logicalTableName][] = new Person(...$params);
                                 break;
                             case 'tariffs':
-                                $tariffObjects[] = new Tariff(...$params);
+                                $objects[$logicalTableName][] = new Tariff(...$params);
                                 break;
                             case 'tickets':
-                                $ticketsObjects[] = new Ticket(...$params);
+                                $objects[$logicalTableName][] = new Ticket(...$params);
                                 break;
                         }
                     }
@@ -143,7 +137,8 @@ final class ApiSorm extends SormService
                 }
                 $finish[$logicalTableName] = true;
                 echo "Таблица $logicalTableName полностью обработана.\n";
-                ApiSormService::exportToSorm($settings['sormApiUrl'],$settings['APP_KEY'],$data);
+                echo $settings['sormApiUrl']." --- ".$settings['APP_KEY'].PHP_EOL;
+                ApiSormService::exportToSorm($settings['sormApiUrl'],$settings['APP_KEY'],$objects[$logicalTableName]);
             } catch (\PDOException $e) {
                 echo "[Error] Ошибка выполнения запроса для таблицы $tableName: " . $e->getMessage() . "\n";
             }
