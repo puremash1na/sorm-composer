@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSorm.php
- * Updated At: 21.10.2024, 14:13
+ * Updated At: 21.10.2024, 15:59
  *
  */
 
@@ -92,7 +92,6 @@ final class ApiSorm extends SormService
                         break;
                     }
 
-                    $exportBatch = []; // Массив для хранения данных для API
                     foreach ($data as $row) {
                         $params = [];
                         foreach ($keys as $key => $value) {
@@ -106,20 +105,11 @@ final class ApiSorm extends SormService
                         }
 
                         switch ($logicalTableName) {
-                            case 'logs_is':
-                                $object = new LogIs(...$params);
-                                break;
-                            case 'operations':
-                                $object = new Operation(...$params);
-                                break;
                             case 'orders':
                                 $object = new Order(...$params);
                                 break;
                             case 'payment_methods':
                                 $object = new PaymentMethod(...$params);
-                                break;
-                            case 'person':
-                                $object = new Person(...$params);
                                 break;
                             case 'tariffs':
                                 $object = new Tariff(...$params);
@@ -129,14 +119,12 @@ final class ApiSorm extends SormService
                                 break;
                         }
 
+                        // Теперь сразу отправляем данные на API
                         if (isset($object)) {
-                            $exportBatch[] = $object->dataForExport();
+                            $exportData = $object->dataForExport(); // или $object->dataForExport();
+                            ApiSormService::exportToSorm($settings['sormApiUrl'], $settings['APP_KEY'], $exportData);
+                            echo "Объект для таблицы $logicalTableName отправлен на API.\n";
                         }
-                    }
-
-                    if (!empty($exportBatch)) {
-                        ApiSormService::exportToSorm($settings['sormApiUrl'], $settings['APP_KEY'], $exportBatch);
-                        echo "Группа объектов для таблицы $logicalTableName отправлена на API.\n";
                     }
 
                     $processedCount += count($data);
