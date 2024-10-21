@@ -3,13 +3,14 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSormService.php
- * Updated At: 18.10.2024, 14:45
+ * Updated At: 21.10.2024, 12:07
  *
  */
 
 namespace SormModule\Service\Api;
 
 use Exception;
+use SormModule\Service\Exception\ApiSormException;
 use SormModule\Service\Security\SormService;
 
 final class ApiSormService extends SormService
@@ -18,7 +19,25 @@ final class ApiSormService extends SormService
     public static function queryApi() {}
     public static function downloadApi() {}
     public static function metricApi() {}
-    public static function exportToSorm() {}
+
+    /**
+     * @throws ApiSormException
+     */
+    public static function exportToSorm(string $sormApiUrl, string $sormKey, array $data)
+    {
+        try {
+            $response = self::sendRequest(
+                "$sormApiUrl/api/exportToSorm",
+                'POST',
+                null,
+                $data,
+                $data,
+                $sormKey
+            );
+        } catch (ApiSormException $e) {
+            throw new ApiSormException($e->getCode(),$e->getMessage(),$e->getPrevious());
+        }
+    }
     /**
      * @throws Exception
      */
@@ -27,7 +46,8 @@ final class ApiSormService extends SormService
         string $method,
         ?array $headers = null,
         ?array $body = null,
-        ?array $params = null
+        ?array $params = null,
+        ?string $sormKey = null,
     ): array {
 
         if (!empty($params)) {
@@ -63,6 +83,7 @@ final class ApiSormService extends SormService
             }
             $headers[] = 'Content-Type: application/json';
             $headers[] = 'Content-Length: ' . strlen($jsonBody);
+            $headers[] = 'SORM-Key: ' . $sormKey;
         }
 
         if (!empty($headers)) {

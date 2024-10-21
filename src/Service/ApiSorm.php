@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSorm.php
- * Updated At: 18.10.2024, 16:37
+ * Updated At: 21.10.2024, 12:07
  *
  */
 
@@ -12,6 +12,7 @@ namespace SormModule\Service;
 use Exception;
 use PDO;
 use SormModule\Installer;
+use SormModule\Service\Api\ApiSormService;
 use SormModule\Service\DTO\Database\LogIs;
 use SormModule\Service\DTO\Database\Operation;
 use SormModule\Service\DTO\Database\Order;
@@ -142,7 +143,7 @@ final class ApiSorm extends SormService
                 }
                 $finish[$logicalTableName] = true;
                 echo "Таблица $logicalTableName полностью обработана.\n";
-
+                ApiSormService::exportToSorm($settings['sormApiUrl'],$settings['APP_KEY'],$data);
             } catch (\PDOException $e) {
                 echo "[Error] Ошибка выполнения запроса для таблицы $tableName: " . $e->getMessage() . "\n";
             }
