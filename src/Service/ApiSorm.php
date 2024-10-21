@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSorm.php
- * Updated At: 21.10.2024, 16:14
+ * Updated At: 21.10.2024, 16:33
  *
  */
 
@@ -107,9 +107,6 @@ final class ApiSorm extends SormService
                         switch ($logicalTableName) {
                             case 'orders':
                                 $object = new Order(...$params);
-                                break;
-                            case 'payment_methods':
-                                $object = new PaymentMethod(...$params);
                                 break;
                             case 'tariffs':
                                 $object = new Tariff(...$params);

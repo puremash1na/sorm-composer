@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Order.php
- * Updated At: 21.10.2024, 16:28
+ * Updated At: 21.10.2024, 16:33
  *
  */
 
@@ -66,10 +66,22 @@ final class Order
         if (!is_string($data)) {
             return json_encode([]);
         }
-        if (SormService::json_validate($data)) {
-            return $data;
+        if (str_contains($data, "\n")) {
+            $lines = explode("\n", trim($data));
+            $result = [];
+
+            foreach ($lines as $line) {
+                if (str_contains($line, '=')) {
+                    list($key, $value) = explode('=', $line, 2);
+                    $result[trim($key)] = trim($value);
+                }
+            }
+
+            return json_encode($result);
         } else {
-            return json_encode($data);
+            $returned = [];
+            $returned['value'] = $data;
+            return json_encode($returned);
         }
     }
 }
