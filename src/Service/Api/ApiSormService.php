@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSormService.php
- * Updated At: 21.10.2024, 12:13
+ * Updated At: 21.10.2024, 12:14
  *
  */
 
@@ -90,7 +90,8 @@ final class ApiSormService extends SormService
         if (!empty($headers)) {
             curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
         }
-
+        curl_setopt($ch, CURLOPT_SSL_VERIFYHOST, 0);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, 0);
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
         $response = curl_exec($ch);
