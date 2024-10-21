@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSorm.php
- * Updated At: 21.10.2024, 16:38
+ * Updated At: 21.10.2024, 21:46
  *
  */
 
@@ -50,8 +50,8 @@ final class ApiSorm extends SormService
         $associationsKeys = $settings['associationsKeys'];
 
         foreach ($associationsDb as $logicalTableName => $dbConfig) {
-            $dbType    = key($dbConfig);
-            $tableName = $dbConfig[$dbType];
+            $dbType    = key($dbConfig); // database or paymentMethods
+            $tableName = $dbConfig[$dbType]; // logs
             $dbCreds = $settings[$dbType] ?? null;
 
             if (!$dbCreds) {
@@ -83,6 +83,10 @@ final class ApiSorm extends SormService
                 $processedCount = 0;
 
                 while ($processedCount < $totalCount) {
+                    $selectedFields = implode(', ', array_map(function($field) {
+                        return "`$field`";
+                    }, array_values($keys)));
+                    echo "[89] SELECT $selectedFields FROM `$tableName` LIMIT $batchSize OFFSET $processedCount\n\n";
                     $query = "SELECT * FROM `$tableName` LIMIT $batchSize OFFSET $processedCount";
                     $stmt = $database->prepare($query);
                     $stmt->execute();
