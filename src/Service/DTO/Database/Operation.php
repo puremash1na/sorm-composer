@@ -3,11 +3,13 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Operation.php
- * Updated At: 21.10.2024, 16:06
+ * Updated At: 21.10.2024, 16:17
  *
  */
 
 namespace SormModule\Service\DTO\Database;
+
+use SormModule\Service\Security\SormService;
 
 final class Operation
 {
@@ -50,14 +52,19 @@ final class Operation
     }
     private function checkData(mixed $data): string
     {
-        if(is_array($data)) {
+        if (is_array($data)) {
             return json_encode($data);
         }
-        if(@unserialize($data) !== false) {
+        if (@unserialize($data) !== false) {
             $data = @unserialize($data);
             return json_encode($data);
         }
-        if(!is_string($data)) {
+        if (!is_string($data)) {
+            return json_encode([]);
+        }
+        if (SormService::json_validate($data)) {
+            return $data;
+        } else {
             return json_encode([]);
         }
     }

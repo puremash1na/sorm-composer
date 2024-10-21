@@ -3,11 +3,13 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Order.php
- * Updated At: 21.10.2024, 16:16
+ * Updated At: 21.10.2024, 16:17
  *
  */
 
 namespace SormModule\Service\DTO\Database;
+
+use SormModule\Service\Security\SormService;
 
 final class Order
 {
@@ -64,9 +66,10 @@ final class Order
         if (!is_string($data)) {
             return json_encode([]);
         }
-        if(json_validate($data)) {
+        if (SormService::json_validate($data)) {
             return $data;
+        } else {
+            return json_encode([]);
         }
-        return json_encode($data);
     }
 }

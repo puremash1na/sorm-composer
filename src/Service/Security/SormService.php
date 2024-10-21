@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: SormService.php
- * Updated At: 17.10.2024, 13:31
+ * Updated At: 21.10.2024, 16:17
  *
  */
 
@@ -11,6 +11,11 @@ namespace SormModule\Service\Security;
 
 class SormService
 {
+    public static function json_validate(string $json): bool
+    {
+        json_decode($json);
+        return (json_last_error() === JSON_ERROR_NONE);
+    }
     public function __call(string $name, array $arguments): mixed
     {
         if (method_exists(__CLASS__, $name)) {
