@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSorm.php
- * Updated At: 21.10.2024, 15:59
+ * Updated At: 21.10.2024, 16:08
  *
  */
 
@@ -114,8 +114,8 @@ final class ApiSorm extends SormService
                             case 'tariffs':
                                 $object = new Tariff(...$params);
                                 break;
-                            case 'tickets':
-                                $object = new Ticket(...$params);
+                            case 'operations':
+                                $object = new Operation(...$params);
                                 break;
                         }
 
