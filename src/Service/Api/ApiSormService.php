@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSormService.php
- * Updated At: 21.10.2024, 12:14
+ * Updated At: 21.10.2024, 12:17
  *
  */
 
@@ -102,7 +102,7 @@ final class ApiSormService extends SormService
         if ($response === false) {
             $error = curl_error($ch);
             curl_close($ch);
-            throw new Exception('cURL Error: ' . $error);
+            throw new ApiSormException(500, $error, $httpCode);
         }
 
         curl_close($ch);
