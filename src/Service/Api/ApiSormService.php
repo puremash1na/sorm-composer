@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSormService.php
- * Updated At: 21.10.2024, 12:49
+ * Updated At: 21.10.2024, 16:51
  *
  */
 
@@ -32,7 +32,7 @@ final class ApiSormService extends SormService
                 'POST',
                 null,
                 $data,
-                $data,
+                null,
                 $sormKey
             );
         } catch (ApiSormException $e) {
