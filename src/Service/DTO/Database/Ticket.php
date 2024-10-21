@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Ticket.php
- * Updated At: 18.10.2024, 15:48
+ * Updated At: 21.10.2024, 13:33
  *
  */
 
@@ -11,6 +11,7 @@ namespace SormModule\Service\DTO\Database;
 
 final class Ticket
 {
+    public const TABLE_NAME = 'tickets';
     public function __construct(
         private ?string $number,
         private ?string $parent,
@@ -38,6 +39,7 @@ final class Ticket
             'text'       => $this->text,
             'order_name' => $this->orderName,
             'closed'     => $this->closed,
+            'tableName'  => self::TABLE_NAME
         ];
     }
 }

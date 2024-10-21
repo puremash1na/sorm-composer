@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Order.php
- * Updated At: 18.10.2024, 15:48
+ * Updated At: 21.10.2024, 13:33
  *
  */
 
@@ -11,6 +11,7 @@ namespace SormModule\Service\DTO\Database;
 
 final class Order
 {
+    public const TABLE_NAME = 'orders';
     public function __construct(
         private ?string $number,
         private ?string $date,
@@ -33,21 +34,22 @@ final class Order
     public function dataForExport(): array
     {
         return [
-            'number'  => $this->number,
-            'date'    => $this->date,
-            'expired' => $this->expired,
-            'from'    => $this->from,
-            'type'    => $this->type,
-            'server'  => $this->server,
-            'name'    => $this->name,
-            'vm_id'   => $this->vmId,
-            'info'    => $this->info,
-            'ip'      => $this->ip,
-            'tariff'  => $this->tariff,
-            'price'   => $this->price,
-            'closed'  => $this->closed,
-            'reason'  => $this->reason,
-            'test'    => $this->test,
+            'number'    => $this->number,
+            'date'      => $this->date,
+            'expired'   => $this->expired,
+            'from'      => $this->from,
+            'type'      => $this->type,
+            'server'    => $this->server,
+            'name'      => $this->name,
+            'vm_id'     => $this->vmId,
+            'info'      => $this->info,
+            'ip'        => $this->ip,
+            'tariff'    => $this->tariff,
+            'price'     => $this->price,
+            'closed'    => $this->closed,
+            'reason'    => $this->reason,
+            'test'      => $this->test,
+            'tableName' => self::TABLE_NAME
         ];
     }
 }

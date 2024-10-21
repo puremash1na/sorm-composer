@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Tariff.php
- * Updated At: 18.10.2024, 15:48
+ * Updated At: 21.10.2024, 13:33
  *
  */
 
@@ -11,6 +11,7 @@ namespace SormModule\Service\DTO\Database;
 
 final class Tariff
 {
+    public const TABLE_NAME = 'tariffs';
     public function __construct(
         private ?string $number,
         private ?string $name,
@@ -24,12 +25,13 @@ final class Tariff
     public function dataForExport(): array
     {
         return [
-            'number'  => $this->number,
-            'name'    => $this->name,
-            'type'    => $this->type,
-            'price'   => $this->price,
-            'prolong' => $this->prolong,
-            'periode' => $this->periode,
+            'number'    => $this->number,
+            'name'      => $this->name,
+            'type'      => $this->type,
+            'price'     => $this->price,
+            'prolong'   => $this->prolong,
+            'periode'   => $this->periode,
+            'tableName' => self::TABLE_NAME
         ];
     }
 }

@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Operation.php
- * Updated At: 18.10.2024, 15:48
+ * Updated At: 21.10.2024, 13:33
  *
  */
 
@@ -11,6 +11,7 @@ namespace SormModule\Service\DTO\Database;
 
 final class Operation
 {
+    public const TABLE_NAME = 'operations';
     public function __construct(
         private ?string $number,
         private ?string $person,
@@ -44,6 +45,7 @@ final class Operation
             'money_date'   => $this->moneyDate,
             'money_key'    => $this->moneyKey,
             'money_status' => $this->moneyStatus,
+            'tableName'    => self::TABLE_NAME
         ];
     }
 }

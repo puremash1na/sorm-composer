@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Person.php
- * Updated At: 18.10.2024, 15:48
+ * Updated At: 21.10.2024, 13:33
  *
  */
 
@@ -11,6 +11,7 @@ namespace SormModule\Service\DTO\Database;
 
 final class Person
 {
+    public const TABLE_NAME = 'person';
     public function __construct(
         private ?string $login,
         private ?string $email,
@@ -66,6 +67,7 @@ final class Person
             'verified'       => $this->verified,
             'data'           => $this->data,
             'parent'         => $this->parent,
+            'tableName'      => self::TABLE_NAME
         ];
     }
 }
