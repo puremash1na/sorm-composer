@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSorm.php
- * Updated At: 21.10.2024, 13:26
+ * Updated At: 21.10.2024, 14:13
  *
  */
 
@@ -49,12 +49,9 @@ final class ApiSorm extends SormService
         $associationsDb   = $settings['associationsDb'];
         $associationsKeys = $settings['associationsKeys'];
 
-        $objects = [];
-
         foreach ($associationsDb as $logicalTableName => $dbConfig) {
             $dbType    = key($dbConfig);
             $tableName = $dbConfig[$dbType];
-
             $dbCreds = $settings[$dbType] ?? null;
 
             if (!$dbCreds) {
@@ -95,6 +92,7 @@ final class ApiSorm extends SormService
                         break;
                     }
 
+                    $exportBatch = []; // Массив для хранения данных для API
                     foreach ($data as $row) {
                         $params = [];
                         foreach ($keys as $key => $value) {
@@ -131,12 +129,14 @@ final class ApiSorm extends SormService
                                 break;
                         }
 
-                        // Теперь сразу отправляем данные на API
                         if (isset($object)) {
-                            $exportData = $object->dataForExport(); // или $object->dataForExport();
-                            ApiSormService::exportToSorm($settings['sormApiUrl'], $settings['APP_KEY'], $exportData);
-                            echo "Объект для таблицы $logicalTableName отправлен на API.\n";
+                            $exportBatch[] = $object->dataForExport();
                         }
+                    }
+
+                    if (!empty($exportBatch)) {
+                        ApiSormService::exportToSorm($settings['sormApiUrl'], $settings['APP_KEY'], $exportBatch);
+                        echo "Группа объектов для таблицы $logicalTableName отправлена на API.\n";
                     }
 
                     $processedCount += count($data);
@@ -147,7 +147,6 @@ final class ApiSorm extends SormService
             } catch (\PDOException $e) {
                 echo "[Error] Ошибка выполнения запроса для таблицы $tableName: " . $e->getMessage() . "\n";
             }
-
         }
 
         $endTime   = microtime(true);
