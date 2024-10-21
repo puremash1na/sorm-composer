@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: ApiSormService.php
- * Updated At: 21.10.2024, 12:07
+ * Updated At: 21.10.2024, 12:13
  *
  */
 
@@ -26,6 +26,7 @@ final class ApiSormService extends SormService
     public static function exportToSorm(string $sormApiUrl, string $sormKey, array $data)
     {
         try {
+            echo "отправялем на $sormApiUrl/api/exportToSorm\n\n";
             $response = self::sendRequest(
                 "$sormApiUrl/api/exportToSorm",
                 'POST',
