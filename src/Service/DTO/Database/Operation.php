@@ -3,7 +3,7 @@
  * Copyright (c) 2024 - 2024, WebHost1, LLC. All rights reserved.
  * Author: epilepticmane
  * File: Operation.php
- * Updated At: 21.10.2024, 16:17
+ * Updated At: 21.10.2024, 16:28
  *
  */
 
@@ -65,7 +65,7 @@ final class Operation
         if (SormService::json_validate($data)) {
             return $data;
         } else {
-            return json_encode([]);
+            return json_encode($data);
         }
     }
 }
